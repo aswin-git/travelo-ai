@@ -1,0 +1,231 @@
+import { useState, useRef, useEffect } from 'react'
+import './index.css'
+
+export default function App() {
+  const [chatHistory, setChatHistory] = useState([
+    { role: 'ai', content: 'Hi there! I\'m Travelo AI. How can I help you plan your next trip?' }
+  ])
+  const [message, setMessage] = useState('')
+  const [budget, setBudget] = useState(5000)
+  const [loading, setLoading] = useState(false)
+  const [latestData, setLatestData] = useState(null)
+  const [activeTab, setActiveTab] = useState('Hotels')
+  const [destination, setDestination] = useState('Explore')
+
+  const chatEndRef = useRef(null)
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatHistory, loading])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!message.trim()) return
+
+    const userMsg = { role: 'user', content: message }
+    setChatHistory(prev => [...prev, userMsg])
+    setMessage('')
+    setLoading(true)
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg.content, budget: Number(budget) })
+      })
+      const data = await res.json()
+      
+      let aiContent = data.response || 'I\'ve updated your recommendations on the right.'
+      
+      if (data.hotels && data.hotels.length > 0) {
+        setLatestData({ type: 'hotel_recommendation', results: data.hotels })
+        setActiveTab('Hotels')
+      }
+
+      if (data.place_info) {
+        setDestination(data.place_info.name)
+      }
+
+      setChatHistory(prev => [...prev, { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt }])
+    } catch (err) {
+      setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I failed to connect to the backend.' }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleReviewRequest = async (placeName) => {
+    setLoading(true)
+    setChatHistory(prev => [...prev, { role: 'user', content: `What do real users say about ${placeName}?` }])
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/chat/summarize-place?place_name=${encodeURIComponent(placeName)}`, {
+        method: 'POST'
+      })
+      const data = await res.json()
+      setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
+    } catch (err) {
+      setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews.' }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleHotelReviewRequest = async (hotelName, propertyToken) => {
+    setLoading(true)
+    setChatHistory(prev => [...prev, { role: 'user', content: `Summarize reviews for ${hotelName}` }])
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/chat/summarize-hotel?hotel_name=${encodeURIComponent(hotelName)}&property_token=${propertyToken}`, {
+        method: 'POST'
+      })
+      const data = await res.json()
+      setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
+    } catch (err) {
+      setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this hotel.' }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="app-container">
+      {/* Top Bar */}
+      <header className="top-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ background: '#3b82f6', color: 'white', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', fontWeight: 'bold' }}>T</div>
+          <div>
+            <h1>TRAVELO AI</h1>
+            <div className="trip-info">{destination} • Flexible Dates</div>
+          </div>
+        </div>
+        <div style={{ color: '#4ade80', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
+          <span style={{ width: 8, height: 8, background: '#4ade80', borderRadius: '50%', display: 'inline-block' }}></span>
+          System Ready
+        </div>
+      </header>
+
+      <div className="main-content">
+        {/* Left Pane: Chat */}
+        <div className="chat-pane">
+          <div className="chat-history">
+            {chatHistory.map((msg, idx) => (
+              <div key={idx} className={`message ${msg.role}`}>
+                {msg.content}
+                {msg.role === 'ai' && msg.show_review_prompt && (
+                  <div style={{ marginTop: '12px' }}>
+                    <button 
+                      onClick={() => handleReviewRequest(destination)}
+                      style={{ background: 'rgba(59, 130, 246, 0.2)', border: '1px solid #3b82f6', color: '#60a5fa', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      💬 See user experiences
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {loading && (
+              <div className="message ai loader">
+                <div className="dot"></div>
+                <div className="dot"></div>
+                <div className="dot"></div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          <div className="input-area">
+            <form className="input-form" onSubmit={handleSubmit}>
+              <input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Where do you want to go?"
+                disabled={loading}
+              />
+              <button type="submit" className="send-btn" disabled={loading || !message.trim()}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Pane: Context & Results */}
+        <div className="context-pane">
+          <div className="tabs">
+            {['Hotels', 'Food', 'Places', 'Events'].map(tab => (
+              <button 
+                key={tab} 
+                className={`tab ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {latestData?.type === 'hotel_recommendation' && activeTab === 'Hotels' ? (
+            <>
+              <div className="context-banner">
+                🎯 Best matches found in {destination} based on current availability.
+              </div>
+
+              <div className="section-title">Top Recommendations</div>
+              
+              <div className="cards-container">
+                {latestData.results.map((hotel, idx) => (
+                  <div key={idx} className="hotel-card">
+                    <div className="card-header">
+                      <div>
+                        <h3 className="card-title">
+                          <span style={{ color: '#f59e0b', marginRight: '6px' }}>★</span>
+                          {hotel.name}
+                        </h3>
+                        <div className="card-subtitle">{hotel.address || destination}</div>
+                      </div>
+                      <div className="card-price">
+                        <div className="price-val">₹{hotel.price}</div>
+                        <div className="price-tag">Per Night</div>
+                      </div>
+                    </div>
+
+                    <div className="pills">
+                      <span className="pill">Verified</span>
+                      <span className="pill">Free Wifi</span>
+                      {hotel.rating && <span className="pill">{hotel.rating} Rating</span>}
+                    </div>
+
+                    <div className="card-summary">
+                      {hotel.description || "A highly rated stay options with modern amenities and great service."}
+                    </div>
+
+                    <div className="score-bar">
+                      <div className="progress-bg">
+                        <div className="progress-fill" style={{ width: `${(hotel.rating / 5) * 100 || 85}%` }}></div>
+                      </div>
+                      <span className="score-val">Match {Math.round((hotel.rating / 5) * 100 || 85)}%</span>
+                    </div>
+
+                    <button 
+                      className="add-btn" 
+                      style={{ marginTop: '16px', width: '100%', borderColor: '#3b82f6', color: '#60a5fa', fontWeight: '500' }}
+                      onClick={() => handleHotelReviewRequest(hotel.name, hotel.property_token)}
+                    >
+                      💬 Summarize Reviews
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60%', color: 'var(--text-secondary)' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🌍</div>
+              <div style={{ fontWeight: '500' }}>Your travel insights will appear here</div>
+              <div style={{ fontSize: '0.85rem', marginTop: '8px' }}>Try searching for "hotels in Kochi" or "tell me about Alappuzha"</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,20 @@
+# Python
+backend/venv/
+__pycache__/
+*.pyc
+
+# Node
+frontend/node_modules/
+
+# Environment variables
+backend/.env
+
+# Chroma vector DB
+backend/chroma_data/
+
+# Build folders
+dist/
+build/
+
+# OS files
+.DS_Store

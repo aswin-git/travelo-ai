@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: travelo_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: travelo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    restart: unless-stopped
+
+volumes:
+  pgdata:
