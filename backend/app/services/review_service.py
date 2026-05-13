@@ -1,3 +1,6 @@
+#review_service.py
+
+
 from serpapi import GoogleSearch
 from typing import List, Optional
 from ..config import settings
@@ -150,7 +153,7 @@ def get_place_reviews(place_name: str) -> List[str]:
         print(f"Place reviews search error: {e}")
         return []
 
-def get_and_summarize_reviews(subject_name: str, hotel_token: str = None) -> str:
+async def get_and_summarize_reviews(subject_name: str, hotel_token: str = None) -> str:
     """Orchestrates fetching and summarizing reviews."""
     if hotel_token:
         from .hotel_service import get_hotel_reviews
@@ -166,7 +169,8 @@ def get_and_summarize_reviews(subject_name: str, hotel_token: str = None) -> str
         
     logger.info(f"Successfully retrieved {len(reviews)} reviews for {subject_name}. Summarizing...")
     reviews_text = "\n---\n".join(reviews)
-    return summarize_reviews(reviews_text, subject_name)
+    summary = await summarize_reviews(reviews_text, subject_name)
+    return summary
 
 def get_place_description(place_name: str) -> Optional[str]:
     """Fetches a description of a place using SerpAPI Google Search."""

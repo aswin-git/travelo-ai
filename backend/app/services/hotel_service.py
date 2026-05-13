@@ -16,6 +16,11 @@ def save_hotels_to_db(db: Session, hotels_data: List[Dict[str, Any]], place_id: 
         # Check if hotel with this token already exists
         existing = db.query(Hotel).filter(Hotel.property_token == token).first()
         if existing:
+            existing.price = str(h.get("price"))
+            existing.rating = h.get("rating")
+            existing.reviews_count = h.get("reviews")
+            existing.description = h.get("description")
+            existing.thumbnail = h.get("thumbnail")
             continue
             
         new_hotel = Hotel(

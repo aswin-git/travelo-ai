@@ -35,6 +35,7 @@ class Hotel(Base):
     thumbnail = Column(Text)
     property_token = Column(String(500))
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class ReviewSummary(Base):
     __tablename__ = "review_summaries"

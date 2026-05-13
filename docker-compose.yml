@@ -5,14 +5,40 @@ services:
     image: postgres:15-alpine
     container_name: travelo_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: travelo
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-travelo}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: travelo_backend
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-travelo}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      SERPAPI_KEY: ${SERPAPI_KEY}
+      CHROMA_PERSIST_DIR: /app/chroma_data
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/chroma_data:/app/chroma_data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: travelo_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
