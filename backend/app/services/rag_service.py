@@ -107,7 +107,7 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
         if weather_info:
             runtime_context += f" | {weather_info}"
 
-        bot_response = chat_with_context(message, runtime_context)
+        bot_response = await chat_with_context(message, runtime_context)
         return {
             "response": bot_response,
             "source": "database_and_rag",

@@ -37,6 +37,35 @@ class Hotel(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class Attraction(Base):
+    __tablename__ = "attractions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False)
+    place_id = Column(UUID(as_uuid=True), ForeignKey("places.id"))
+    rating = Column(Float)
+    reviews_count = Column(BigInteger)
+    description = Column(Text)
+    thumbnail = Column(Text)
+    data_id = Column(String(255))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Restaurant(Base):
+    __tablename__ = "restaurants"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False)
+    place_id = Column(UUID(as_uuid=True), ForeignKey("places.id"))
+    rating = Column(Float)
+    reviews_count = Column(BigInteger)
+    description = Column(Text)
+    thumbnail = Column(Text)
+    data_id = Column(String(255))
+    price_level = Column(String(50))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 class ReviewSummary(Base):
     __tablename__ = "review_summaries"
 
@@ -77,9 +106,30 @@ class HotelResult(BaseModel):
     check_out: Optional[str] = None
     property_token: Optional[str] = None
 
+class AttractionResult(BaseModel):
+    name: str
+    rating: Optional[float] = None
+    reviews: Optional[int] = None
+    description: Optional[str] = None
+    thumbnail: Optional[str] = None
+    data_id: Optional[str] = None
+
+class RestaurantResult(BaseModel):
+    name: str
+    rating: Optional[float] = None
+    reviews: Optional[int] = None
+    description: Optional[str] = None
+    thumbnail: Optional[str] = None
+    data_id: Optional[str] = None
+    price_level: Optional[str] = None
+
 class ChatResponse(BaseModel):
     response: str
     source: str
     place_info: Optional[PlaceResponse] = None
     hotels: Optional[list[HotelResult]] = None
+    attractions: Optional[list[AttractionResult]] = None
+    restaurants: Optional[list[RestaurantResult]] = None
     show_review_prompt: Optional[bool] = False
+    show_attractions_prompt: Optional[bool] = False
+    show_restaurants_prompt: Optional[bool] = False

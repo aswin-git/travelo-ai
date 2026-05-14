@@ -18,20 +18,16 @@ export default function App() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatHistory, loading])
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!message.trim()) return
-
-    const userMsg = { role: 'user', content: message }
+  async function sendDirectMessage(text) {
+    const userMsg = { role: 'user', content: text }
     setChatHistory(prev => [...prev, userMsg])
-    setMessage('')
     setLoading(true)
 
     try {
       const res = await fetch('http://127.0.0.1:8000/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg.content, budget: Number(budget) })
+        body: JSON.stringify({ message: text, budget: Number(budget) })
       })
       const data = await res.json()
       
@@ -40,18 +36,32 @@ export default function App() {
       if (data.hotels && data.hotels.length > 0) {
         setLatestData({ type: 'hotel_recommendation', results: data.hotels })
         setActiveTab('Hotels')
+      } else if (data.attractions && data.attractions.length > 0) {
+        setLatestData({ type: 'attraction_recommendation', results: data.attractions })
+        setActiveTab('Places')
+      } else if (data.restaurants && data.restaurants.length > 0) {
+        setLatestData({ type: 'restaurant_recommendation', results: data.restaurants })
+        setActiveTab('Food')
       }
 
       if (data.place_info) {
         setDestination(data.place_info.name)
       }
 
-      setChatHistory(prev => [...prev, { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt }])
+      setChatHistory(prev => [...prev, { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt, show_attractions_prompt: data.show_attractions_prompt, show_restaurants_prompt: data.show_restaurants_prompt }])
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I failed to connect to the backend.' }])
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!message.trim()) return
+    const text = message
+    setMessage('')
+    await sendDirectMessage(text)
   }
 
   const handleReviewRequest = async (placeName) => {
@@ -81,6 +91,38 @@ export default function App() {
       setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this hotel.' }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAttractionReviewRequest = async (attractionName, dataId) => {
+    setLoading(true)
+    setChatHistory(prev => [...prev, { role: 'user', content: `Summarize reviews for ${attractionName}` }])
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/chat/summarize-attraction?attraction_name=${encodeURIComponent(attractionName)}&data_id=${encodeURIComponent(dataId)}`, {
+        method: 'POST'
+      })
+      const data = await res.json()
+      setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
+    } catch (err) {
+      setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this attraction.' }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRestaurantReviewRequest = async (restaurantName, dataId) => {
+    setLoading(true)
+    setChatHistory(prev => [...prev, { role: 'user', content: `Summarize reviews for ${restaurantName}` }])
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/chat/summarize-restaurant?restaurant_name=${encodeURIComponent(restaurantName)}&data_id=${encodeURIComponent(dataId)}`, {
+        method: 'POST'
+      })
+      const data = await res.json()
+      setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
+    } catch (err) {
+      setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this restaurant.' }])
     } finally {
       setLoading(false)
     }
@@ -117,6 +159,26 @@ export default function App() {
                       style={{ background: 'rgba(59, 130, 246, 0.2)', border: '1px solid #3b82f6', color: '#60a5fa', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
                     >
                       💬 See user experiences
+                    </button>
+                  </div>
+                )}
+                {msg.role === 'ai' && msg.show_attractions_prompt && (
+                  <div style={{ marginTop: '12px' }}>
+                    <button 
+                      onClick={() => sendDirectMessage(`Show nearby attractions for ${destination}`)}
+                      style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#34d399', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      🏛️ Show nearby attractions
+                    </button>
+                  </div>
+                )}
+                {msg.role === 'ai' && msg.show_restaurants_prompt && (
+                  <div style={{ marginTop: '12px' }}>
+                    <button 
+                      onClick={() => sendDirectMessage(`Where to eat in ${destination}?`)}
+                      style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#f87171', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      🍽️ Show top restaurants
                     </button>
                   </div>
                 )}
@@ -210,6 +272,92 @@ export default function App() {
                       className="add-btn" 
                       style={{ marginTop: '16px', width: '100%', borderColor: '#3b82f6', color: '#60a5fa', fontWeight: '500' }}
                       onClick={() => handleHotelReviewRequest(hotel.name, hotel.property_token)}
+                    >
+                      💬 Summarize Reviews
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : latestData?.type === 'restaurant_recommendation' && activeTab === 'Food' ? (
+            <>
+              <div className="context-banner">
+                🎯 Top dining spots found in {destination}.
+              </div>
+
+              <div className="section-title">Top Restaurants</div>
+              
+              <div className="cards-container">
+                {latestData.results.map((rest, idx) => (
+                  <div key={idx} className="hotel-card">
+                    <div className="card-header">
+                      <div>
+                        <h3 className="card-title">
+                          <span style={{ color: '#ef4444', marginRight: '6px' }}>🍽️</span>
+                          {rest.name}
+                        </h3>
+                      </div>
+                      {rest.rating && (
+                        <div className="card-price">
+                          <div className="price-val">★ {rest.rating}</div>
+                          <div className="price-tag">{rest.reviews} Reviews</div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pills">
+                      {rest.price_level && <span className="pill">{rest.price_level}</span>}
+                    </div>
+
+                    <div className="card-summary">
+                      {rest.description || "A highly rated restaurant offering great food and ambiance."}
+                    </div>
+
+                    <button 
+                      className="add-btn" 
+                      style={{ marginTop: '16px', width: '100%', borderColor: '#ef4444', color: '#f87171', fontWeight: '500' }}
+                      onClick={() => handleRestaurantReviewRequest(rest.name, rest.data_id)}
+                    >
+                      💬 Summarize Reviews
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : latestData?.type === 'attraction_recommendation' && activeTab === 'Places' ? (
+            <>
+              <div className="context-banner">
+                🎯 Top attractions found in {destination}.
+              </div>
+
+              <div className="section-title">Top Attractions</div>
+              
+              <div className="cards-container">
+                {latestData.results.map((attr, idx) => (
+                  <div key={idx} className="hotel-card">
+                    <div className="card-header">
+                      <div>
+                        <h3 className="card-title">
+                          <span style={{ color: '#10b981', marginRight: '6px' }}>🏛️</span>
+                          {attr.name}
+                        </h3>
+                      </div>
+                      {attr.rating && (
+                        <div className="card-price">
+                          <div className="price-val">★ {attr.rating}</div>
+                          <div className="price-tag">{attr.reviews} Reviews</div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="card-summary">
+                      {attr.description || "A popular point of interest worth exploring."}
+                    </div>
+
+                    <button 
+                      className="add-btn" 
+                      style={{ marginTop: '16px', width: '100%', borderColor: '#10b981', color: '#34d399', fontWeight: '500' }}
+                      onClick={() => handleAttractionReviewRequest(attr.name, attr.data_id)}
                     >
                       💬 Summarize Reviews
                     </button>

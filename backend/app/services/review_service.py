@@ -153,12 +153,20 @@ def get_place_reviews(place_name: str) -> List[str]:
         print(f"Place reviews search error: {e}")
         return []
 
-async def get_and_summarize_reviews(subject_name: str, hotel_token: str = None) -> str:
+async def get_and_summarize_reviews(subject_name: str, hotel_token: str = None, data_id: str = None, restaurant_data_id: str = None) -> str:
     """Orchestrates fetching and summarizing reviews."""
     if hotel_token:
         from .hotel_service import get_hotel_reviews
         logger.info(f"Fetching hotel reviews for {subject_name} using token...")
         reviews = get_hotel_reviews(hotel_token)
+    elif data_id:
+        from .attraction_service import get_attraction_reviews
+        logger.info(f"Fetching attraction reviews for {subject_name} using data_id...")
+        reviews = get_attraction_reviews(data_id)
+    elif restaurant_data_id:
+        from .restaurant_service import get_restaurant_reviews
+        logger.info(f"Fetching restaurant reviews for {subject_name} using restaurant_data_id...")
+        reviews = get_restaurant_reviews(restaurant_data_id)
     else:
         logger.info(f"Fetching place reviews for {subject_name}...")
         reviews = get_place_reviews(subject_name)
