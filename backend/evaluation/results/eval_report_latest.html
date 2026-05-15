@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travelo AI — RAG Evaluation Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 8px; color: #94a3b8; font-size: 0.8em;
+              font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+              border-bottom: 2px solid #1e293b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div style="margin-bottom:40px;">
+            <h1 style="font-size:1.8em; font-weight:700; margin-bottom:4px;">
+                🧭 Travelo AI — RAG Evaluation Report
+            </h1>
+            <p style="color:#64748b; font-size:0.9em;">
+                Generated: 2026-05-15T07:11:19.007826+00:00 &nbsp;|&nbsp;
+                Samples: 3 &nbsp;|&nbsp;
+                Duration: 310.68s &nbsp;|&nbsp;
+                Threshold: 0.5
+            </p>
+            <p style="color:#475569; font-size:0.8em; margin-top:4px;">
+                Generation: gemini-2.0-flash (judge), gemini-3.1-flash-lite-preview (generation) &nbsp;|&nbsp;
+                Embeddings: all-MiniLM-L6-v2
+            </p>
+        </div>
+
+        <!-- Aggregate Metrics -->
+        <h2 style="font-size:1.1em; color:#94a3b8; margin-bottom:16px; font-weight:600;">
+            Aggregate Scores
+        </h2>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:40px;">
+            
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #ef444433;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Faithfulness</div>
+            <div style="font-size:2.2em; font-weight:700; color:#ef4444;">0.16</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Is the answer grounded in the retrieved context?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: 0.0 &nbsp;|&nbsp; max: 0.2857 &nbsp;|&nbsp; std: 0.1466
+            </div>
+        </div>
+        
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #ef444433;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Answer Relevancy</div>
+            <div style="font-size:2.2em; font-weight:700; color:#ef4444;">0.57</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Does the answer address the user's question?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: 0.0 &nbsp;|&nbsp; max: 0.9879 &nbsp;|&nbsp; std: 0.5108
+            </div>
+        </div>
+        
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #94a3b833;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Context Precision</div>
+            <div style="font-size:2.2em; font-weight:700; color:#94a3b8;">N/A</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Is the retrieved context relevant?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: N/A &nbsp;|&nbsp; max: N/A &nbsp;|&nbsp; std: N/A
+            </div>
+        </div>
+        
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #ef444433;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Context Recall</div>
+            <div style="font-size:2.2em; font-weight:700; color:#ef4444;">0.08</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Does the context contain needed information?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: 0.0 &nbsp;|&nbsp; max: 0.25 &nbsp;|&nbsp; std: 0.1443
+            </div>
+        </div>
+        
+        </div>
+
+        <!-- Per-Sample Table -->
+        <h2 style="font-size:1.1em; color:#94a3b8; margin-bottom:16px; font-weight:600;">
+            Per-Sample Scores
+        </h2>
+        <div style="overflow-x:auto; margin-bottom:40px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Place</th>
+                        <th>Question</th>
+                        <th>Faithfulness</th>
+                        <th>Relevancy</th>
+                        <th>Ctx Precision</th>
+                        <th>Ctx Recall</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kumarakom</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Tell me about Kumarakom</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:0px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:86px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.72</span></div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:0px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.00</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">fetched_and_saved</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kumarakom</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What birds can I see in Kumarakom?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:34px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.29</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:0px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:0px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.00</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kumarakom</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Can I do a houseboat trip from Kumarakom?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:24px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.20</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:118px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.99</span></div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:30px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.25</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Detailed Expandable Rows -->
+        <h2 style="font-size:1.1em; color:#94a3b8; margin-bottom:16px; font-weight:600;">
+            Detailed Results (click to expand)
+        </h2>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#1</strong> — Tell me about Kumarakom
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#ef444422; color:#ef4444; font-weight:600; font-size:0.9em;">0.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.72</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        Kumarakom is a picturesque tourist village in Kerala, India, uniquely formed by a cluster of small islands set amidst the scenic Vembanad backwaters. It is widely known for the popular Kumarakom Bird Sanctuary, making it a haven for nature lovers.
+
+If you're planning a visit, the current weather is a humid 28.25°C under overcast clouds.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        No context retrieved.
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Kumarakom is a cluster of small islands on Vembanad Lake in Kerala. It is a popular backwater destination known for its bird sanctuary, houseboat cruises, and Ayurvedic resorts. The Kumarakom Bird San...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#2</strong> — What birds can I see in Kumarakom?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#ef444422; color:#ef4444; font-weight:600; font-size:0.9em;">0.29</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#ef444422; color:#ef4444; font-weight:600; font-size:0.9em;">0.00</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        While the provided context highlights that Kumarakom is a world-class destination for birdwatching, it does not list specific bird species. However, the famous **Kumarakom Bird Sanctuary** is a paradise for nature lovers, where you can expect to see a variety of local species and migratory birds set against the beautiful backdrop of the Vembanad backwaters. It's the perfect spot for a tranquil nature escape!
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Kumarakom. Nestled on the serene Vembanad backwaters, Kumarakom is a picturesque village defined by its tranquil cluster of emerald islands. It is a true paradise for nature lovers, offering world-cla...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        The Kumarakom Bird Sanctuary, spread across 14 acres, is home to local and migratory birds including egrets, herons, cormorants, teals, waterfowl, cuckoos, and Siberian cranes. The best time for bird ...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#3</strong> — Can I do a houseboat trip from Kumarakom?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#ef444422; color:#ef4444; font-weight:600; font-size:0.9em;">0.20</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.99</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        Yes, you absolutely can! Since Kumarakom is nestled right on the serene Vembanad backwaters, it is the perfect starting point for a picturesque houseboat trip through Kerala’s lush, emerald landscape. It's a wonderful way to experience the area's tranquil beauty.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Kumarakom. Nestled on the serene Vembanad backwaters, Kumarakom is a picturesque village defined by its tranquil cluster of emerald islands. It is a true paradise for nature lovers, offering world-cla...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Yes, Kumarakom is one of the top starting points for houseboat cruises in Kerala. Houseboats (kettuvallam) cruise through the scenic Vembanad Lake backwaters. You can book overnight stays with meals i...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+
+        <!-- Footer -->
+        <div style="margin-top:48px; padding-top:16px; border-top:1px solid #1e293b;
+                     color:#475569; font-size:0.75em; text-align:center;">
+            Travelo AI RAG Evaluation Framework &nbsp;·&nbsp; Powered by RAGAS + Gemini
+        </div>
+    </div>
+</body>
+</html>

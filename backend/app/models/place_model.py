@@ -66,6 +66,21 @@ class Restaurant(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class Event(Base):
+    __tablename__ = "events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title = Column(String(255), nullable=False)
+    place_id = Column(UUID(as_uuid=True), ForeignKey("places.id"))
+    date_string = Column(String(100))
+    address = Column(String(500))
+    link = Column(String(500))
+    description = Column(Text)
+    thumbnail = Column(Text)
+    venue_name = Column(String(255))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 class ReviewSummary(Base):
     __tablename__ = "review_summaries"
 
@@ -123,6 +138,15 @@ class RestaurantResult(BaseModel):
     data_id: Optional[str] = None
     price_level: Optional[str] = None
 
+class EventResult(BaseModel):
+    title: str
+    date_string: Optional[str] = None
+    address: Optional[str] = None
+    link: Optional[str] = None
+    description: Optional[str] = None
+    thumbnail: Optional[str] = None
+    venue_name: Optional[str] = None
+
 class ChatResponse(BaseModel):
     response: str
     source: str
@@ -130,6 +154,8 @@ class ChatResponse(BaseModel):
     hotels: Optional[list[HotelResult]] = None
     attractions: Optional[list[AttractionResult]] = None
     restaurants: Optional[list[RestaurantResult]] = None
+    events: Optional[list[EventResult]] = None
     show_review_prompt: Optional[bool] = False
     show_attractions_prompt: Optional[bool] = False
     show_restaurants_prompt: Optional[bool] = False
+    show_events_prompt: Optional[bool] = False

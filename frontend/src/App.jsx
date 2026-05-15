@@ -42,13 +42,16 @@ export default function App() {
       } else if (data.restaurants && data.restaurants.length > 0) {
         setLatestData({ type: 'restaurant_recommendation', results: data.restaurants })
         setActiveTab('Food')
+      } else if (data.events && data.events.length > 0) {
+        setLatestData({ type: 'event_recommendation', results: data.events })
+        setActiveTab('Events')
       }
 
       if (data.place_info) {
         setDestination(data.place_info.name)
       }
 
-      setChatHistory(prev => [...prev, { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt, show_attractions_prompt: data.show_attractions_prompt, show_restaurants_prompt: data.show_restaurants_prompt }])
+      setChatHistory(prev => [...prev, { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt, show_attractions_prompt: data.show_attractions_prompt, show_restaurants_prompt: data.show_restaurants_prompt, show_events_prompt: data.show_events_prompt }])
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I failed to connect to the backend.' }])
     } finally {
@@ -179,6 +182,16 @@ export default function App() {
                       style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#f87171', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
                     >
                       🍽️ Show top restaurants
+                    </button>
+                  </div>
+                )}
+                {msg.role === 'ai' && msg.show_events_prompt && (
+                  <div style={{ marginTop: '12px' }}>
+                    <button 
+                      onClick={() => sendDirectMessage(`What is happening in ${destination}?`)}
+                      style={{ background: 'rgba(139, 92, 246, 0.2)', border: '1px solid #8b5cf6', color: '#a78bfa', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      📅 Show local events
                     </button>
                   </div>
                 )}
@@ -361,6 +374,48 @@ export default function App() {
                     >
                       💬 Summarize Reviews
                     </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : latestData?.type === 'event_recommendation' && activeTab === 'Events' ? (
+            <>
+              <div className="context-banner">
+                🎯 Top events happening in {destination}.
+              </div>
+
+              <div className="section-title">Upcoming Events</div>
+              
+              <div className="cards-container">
+                {latestData.results.map((evt, idx) => (
+                  <div key={idx} className="hotel-card">
+                    <div className="card-header">
+                      <div>
+                        <h3 className="card-title">
+                          <span style={{ color: '#8b5cf6', marginRight: '6px' }}>📅</span>
+                          {evt.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="pills">
+                      {evt.date_string && <span className="pill">{evt.date_string}</span>}
+                      {evt.venue_name && <span className="pill" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa' }}>{evt.venue_name}</span>}
+                    </div>
+
+                    <div className="card-summary">
+                      {evt.description || evt.address || "An upcoming event you might be interested in."}
+                    </div>
+
+                    {evt.link && (
+                      <button 
+                        className="add-btn" 
+                        style={{ marginTop: '16px', width: '100%', borderColor: '#8b5cf6', color: '#a78bfa', fontWeight: '500' }}
+                        onClick={() => window.open(evt.link, '_blank')}
+                      >
+                        🎟️ View Event / Get Tickets
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

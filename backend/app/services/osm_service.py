@@ -1,36 +1,50 @@
 import requests
 from typing import Dict, Any, Optional
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 def fetch_osm_data(place_name: str) -> Optional[Dict[str, Any]]:
-    """Fetches location data from OpenStreetMap's Overpass API."""
-    overpass_url = "http://overpass-api.de/api/interpreter"
-    overpass_query = f"""
-    [out:json];
-    (
-      node["name"~"{place_name}", i]["tourism"];
-      node["name"~"{place_name}", i]["place"~"city|town"];
-      way["name"~"{place_name}", i]["place"~"city|town"];
-      rel["name"~"{place_name}", i]["place"~"city|town"];
-    );
-    out center 1;
-    """
+    """Fetches fast location data (Lat/Lng) using OSM Nominatim."""
+    url = "https://nominatim.openstreetmap.org/search"
+    
+    params = {
+        "q": place_name,
+        "format": "json",
+        "limit": 1,
+        "addressdetails": 1
+    }
+    
     try:
+        # Nominatim requires a valid User-Agent
         headers = {'User-Agent': 'TraveloAI/1.0 (contact@travelo.ai)'}
-        response = requests.post(overpass_url, data={'data': overpass_query}, headers=headers, timeout=10)
+        
+        # 5 seconds is more than enough for Nominatim
+        response = requests.get(url, params=params, headers=headers, timeout=5)
         response.raise_for_status()
+        
         data = response.json()
         
-        if 'elements' in data and len(data['elements']) > 0:
-            element = data['elements'][0]
-            tags = element.get("tags", {})
+        if data and len(data) > 0:
+            element = data[0]
+            
+            # Nominatim provides category via 'class' and 'type'
+            category = element.get("class", "place")
+            if element.get("type"):
+                category += f"/{element.get('type')}"
+                
             return {
-                "name": tags.get("name", place_name),
-                "latitude": element.get("lat") or element.get("center", {}).get("lat"),
-                "longitude": element.get("lon") or element.get("center", {}).get("lon"),
-                "category": tags.get("tourism") or tags.get("place"),
-                "osm_id": element.get("id")
+                "name": element.get("name", place_name),
+                "latitude": float(element.get("lat")),
+                "longitude": float(element.get("lon")),
+                "category": category,
+                "osm_id": element.get("osm_id")
             }
+            
+        logger.info(f"OSM Nominatim found no results for: {place_name}")
         return None
-    except Exception as e:
-        print(f"OSM fetch error: {e}")
+        
+    except requests.exceptions.RequestException as e:
+        # Replaced print() with proper logging
+        logger.error(f"OSM fetch error for {place_name}: {e}")
         return None

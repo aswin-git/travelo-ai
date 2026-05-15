@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from ..database import get_db
-from ..models.place_model import ChatRequest, ChatResponse, PlaceResponse, HotelResult, Hotel, ReviewSummary, Attraction, AttractionResult, Restaurant, RestaurantResult
+from ..models.place_model import ChatRequest, ChatResponse, PlaceResponse, HotelResult, Hotel, ReviewSummary, Attraction, AttractionResult, Restaurant, RestaurantResult, Event, EventResult
 from ..services.rag_service import process_chat_query
 from ..services.hotel_service import search_hotels, save_hotels_to_db
 from ..services.place_service import get_place_by_name, create_place
@@ -39,6 +39,7 @@ async def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
     - "specific_hotel_info" (user asking about a specific hotel by name)
     - "nearby_attractions" (user asking to see nearby places, top sights, or attractions for a city)
     - "restaurant_search" (user asking for places to eat, restaurants, or food in a city)
+    - "event_search" (user asking for things happening, events, concerts, or festivals in a city)
     - "place_info" (user asking about a tourist place, destination, weather, things to do)
 - "destination": the city or place name mentioned (or null)
 - "hotel_name": the specific hotel name if mentioned (or null)
@@ -297,6 +298,58 @@ User message: {request.message}"""
                     source="google_maps",
                 )
 
+        elif intent == "event_search":
+            destination = destination or request.message
+            place = get_place_by_name(db, destination)
+            if place:
+                cached_events = db.query(Event).filter(Event.place_id == place.id).all()
+                if cached_events:
+                    last_updated = cached_events[0].updated_at or cached_events[0].created_at
+                    if datetime.utcnow() - last_updated < timedelta(days=2):
+                        logger.info(f"CACHE HIT: Using cached events for {destination}")
+                        event_results = [
+                            EventResult(
+                                title=e.title, date_string=e.date_string, address=e.address,
+                                link=e.link, description=e.description, thumbnail=e.thumbnail,
+                                venue_name=e.venue_name
+                            )
+                            for e in cached_events
+                        ]
+                        return ChatResponse(
+                            response=f"Here are some upcoming events in {destination}! 📅",
+                            source="local_db_cache",
+                            events=event_results
+                        )
+
+            # Cache miss or stale: fetch fresh from SerpAPI
+            logger.info(f"CACHE MISS/STALE: Fetching fresh events for {destination}")
+            from ..services.event_service import search_events, save_events_to_db
+            events_data = search_events(destination)
+
+            if events_data:
+                if not place:
+                    try:
+                        place = create_place(db, {"name": destination, "source": "event_search"})
+                        logger.info(f"Created placeholder place record for {destination}")
+                    except Exception as e:
+                        logger.error(f"Failed to create place record for {destination}: {e}", exc_info=True)
+                
+                if place:
+                    save_events_to_db(db, events_data, place.id)
+                    logger.info(f"Saved/Updated {len(events_data)} events for {destination}.")
+
+                event_results = [EventResult(**e) for e in events_data]
+                return ChatResponse(
+                    response=f"Here are the top events I found in {destination}! 📅",
+                    source="google_events",
+                    events=event_results,
+                )
+            else:
+                return ChatResponse(
+                    response=f"I couldn't find events for {destination} right now.",
+                    source="google_events",
+                )
+
         else:
             # Place info RAG flow
             place_type = parsed.get("place_type", "poi")
@@ -312,6 +365,7 @@ User message: {request.message}"""
             show_review_prompt = place_info is not None and place_type == "poi"
             show_attractions_prompt = place_info is not None and place_type == "city"
             show_restaurants_prompt = place_info is not None and place_type == "city"
+            show_events_prompt = place_info is not None and place_type == "city"
 
             return ChatResponse(
                 response=result["response"],
@@ -320,6 +374,7 @@ User message: {request.message}"""
                 show_review_prompt=show_review_prompt,
                 show_attractions_prompt=show_attractions_prompt,
                 show_restaurants_prompt=show_restaurants_prompt,
+                show_events_prompt=show_events_prompt,
             )
 
     except Exception as e:

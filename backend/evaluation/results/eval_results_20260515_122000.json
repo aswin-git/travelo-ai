@@ -1,0 +1,71 @@
+{
+  "metrics": {
+    "faithfulness": {
+      "mean": 0.5734,
+      "min": 0.4286,
+      "max": 0.6667,
+      "std": 0.1272
+    },
+    "answer_relevancy": {
+      "mean": 0.7284,
+      "min": 0.6154,
+      "max": 0.9429,
+      "std": 0.1858
+    },
+    "context_recall": {
+      "mean": 0.1667,
+      "min": 0.0,
+      "max": 0.3333,
+      "std": 0.2357
+    }
+  },
+  "per_sample": [
+    {
+      "question": "Tell me about Munnar",
+      "place_name": "Munnar",
+      "answer": "Munnar is a breathtaking hill station in Kerala, famous for its vast, mist-covered tea plantations and refreshing climate. It’s the perfect sanctuary for nature lovers and a popular romantic getaway for honeymooners. \n\nCurrently, it’s a cool 20.26°C with overcast skies—ideal weather for exploring its lush, picturesque hills!",
+      "context_snippet": "Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...",
+      "ground_truth_snippet": "Munnar is a hill station in the Western Ghats of Kerala, India, situated at around 1,600 metres above sea level. It is known for its sprawling tea plantations, misty mountains, and cool climate. Key a...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.625,
+        "answer_relevancy": 0.6154,
+        "context_recall": 0.3333
+      }
+    },
+    {
+      "question": "What are the best things to do in Munnar?",
+      "place_name": "Munnar",
+      "answer": "Munnar is the perfect sanctuary for nature lovers and romantics! While the provided context highlights its lush, mist-covered tea plantations as the main attraction, you can spend your time exploring these sprawling estates, enjoying the refreshingly cool climate, or simply soaking in the serene, picturesque landscapes that make it an ideal romantic escape.",
+      "context_snippet": "Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...",
+      "ground_truth_snippet": "Popular activities in Munnar include visiting tea plantations and the Tea Museum, trekking in Eravikulam National Park to spot the Nilgiri tahr, boating at Mattupetty Dam, exploring the flower gardens...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.4286,
+        "answer_relevancy": 0.627,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "What is the best time to visit Munnar?",
+      "place_name": "Munnar",
+      "answer": "While the specific timing isn't mentioned in the text, Munnar's refreshingly cool climate makes it a year-round destination. Given its current pleasant temperature of 20.26°C, it remains a perfect, serene sanctuary for nature lovers and couples looking to escape into the lush, mist-covered hills.",
+      "context_snippet": "Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...",
+      "ground_truth_snippet": "The best time to visit Munnar is from September to May. The monsoon season (June-August) brings heavy rainfall. Winter months (December-February) are cool and ideal for sightseeing, while summer (Marc...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.9429,
+        "context_recall": null
+      }
+    }
+  ],
+  "metadata": {
+    "timestamp": "2026-05-15T06:50:00.006209+00:00",
+    "num_samples": 3,
+    "elapsed_seconds": 354.9,
+    "embedding_model": "all-MiniLM-L6-v2",
+    "llm_model": "gemini-2.0-flash (judge), gemini-3.1-flash-lite-preview (generation)",
+    "chroma_similarity_threshold": 0.5
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "metrics": {
+    "faithfulness": {
+      "mean": 0.1619,
+      "min": 0.0,
+      "max": 0.2857,
+      "std": 0.1466
+    },
+    "answer_relevancy": {
+      "mean": 0.569,
+      "min": 0.0,
+      "max": 0.9879,
+      "std": 0.5108
+    },
+    "context_recall": {
+      "mean": 0.0833,
+      "min": 0.0,
+      "max": 0.25,
+      "std": 0.1443
+    }
+  },
+  "per_sample": [
+    {
+      "question": "Tell me about Kumarakom",
+      "place_name": "Kumarakom",
+      "answer": "Kumarakom is a picturesque tourist village in Kerala, India, uniquely formed by a cluster of small islands set amidst the scenic Vembanad backwaters. It is widely known for the popular Kumarakom Bird Sanctuary, making it a haven for nature lovers.\n\nIf you're planning a visit, the current weather is a humid 28.25°C under overcast clouds.",
+      "context_snippet": "No context retrieved.",
+      "ground_truth_snippet": "Kumarakom is a cluster of small islands on Vembanad Lake in Kerala. It is a popular backwater destination known for its bird sanctuary, houseboat cruises, and Ayurvedic resorts. The Kumarakom Bird San...",
+      "source": "fetched_and_saved",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.7191,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "What birds can I see in Kumarakom?",
+      "place_name": "Kumarakom",
+      "answer": "While the provided context highlights that Kumarakom is a world-class destination for birdwatching, it does not list specific bird species. However, the famous **Kumarakom Bird Sanctuary** is a paradise for nature lovers, where you can expect to see a variety of local species and migratory birds set against the beautiful backdrop of the Vembanad backwaters. It's the perfect spot for a tranquil nature escape!",
+      "context_snippet": "Kumarakom. Nestled on the serene Vembanad backwaters, Kumarakom is a picturesque village defined by its tranquil cluster of emerald islands. It is a true paradise for nature lovers, offering world-cla...",
+      "ground_truth_snippet": "The Kumarakom Bird Sanctuary, spread across 14 acres, is home to local and migratory birds including egrets, herons, cormorants, teals, waterfowl, cuckoos, and Siberian cranes. The best time for bird ...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.2857,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Can I do a houseboat trip from Kumarakom?",
+      "place_name": "Kumarakom",
+      "answer": "Yes, you absolutely can! Since Kumarakom is nestled right on the serene Vembanad backwaters, it is the perfect starting point for a picturesque houseboat trip through Kerala’s lush, emerald landscape. It's a wonderful way to experience the area's tranquil beauty.",
+      "context_snippet": "Kumarakom. Nestled on the serene Vembanad backwaters, Kumarakom is a picturesque village defined by its tranquil cluster of emerald islands. It is a true paradise for nature lovers, offering world-cla...",
+      "ground_truth_snippet": "Yes, Kumarakom is one of the top starting points for houseboat cruises in Kerala. Houseboats (kettuvallam) cruise through the scenic Vembanad Lake backwaters. You can book overnight stays with meals i...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.2,
+        "answer_relevancy": 0.9879,
+        "context_recall": 0.25
+      }
+    }
+  ],
+  "metadata": {
+    "timestamp": "2026-05-15T07:11:19.007826+00:00",
+    "num_samples": 3,
+    "elapsed_seconds": 310.68,
+    "embedding_model": "all-MiniLM-L6-v2",
+    "llm_model": "gemini-2.0-flash (judge), gemini-3.1-flash-lite-preview (generation)",
+    "chroma_similarity_threshold": 0.5
+  }
+}

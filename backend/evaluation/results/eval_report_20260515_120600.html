@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travelo AI — RAG Evaluation Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 8px; color: #94a3b8; font-size: 0.8em;
+              font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+              border-bottom: 2px solid #1e293b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div style="margin-bottom:40px;">
+            <h1 style="font-size:1.8em; font-weight:700; margin-bottom:4px;">
+                🧭 Travelo AI — RAG Evaluation Report
+            </h1>
+            <p style="color:#64748b; font-size:0.9em;">
+                Generated: 2026-05-15T06:36:00.414236+00:00 &nbsp;|&nbsp;
+                Samples: 3 &nbsp;|&nbsp;
+                Duration: 36.63s &nbsp;|&nbsp;
+                Threshold: 0.5
+            </p>
+            <p style="color:#475569; font-size:0.8em; margin-top:4px;">
+                Generation: gemini-2.0-flash (judge), gemini-3.1-flash-lite-preview (generation) &nbsp;|&nbsp;
+                Embeddings: all-MiniLM-L6-v2
+            </p>
+        </div>
+
+        <!-- Aggregate Metrics -->
+        <h2 style="font-size:1.1em; color:#94a3b8; margin-bottom:16px; font-weight:600;">
+            Aggregate Scores
+        </h2>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:40px;">
+            
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #94a3b833;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Faithfulness</div>
+            <div style="font-size:2.2em; font-weight:700; color:#94a3b8;">N/A</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Is the answer grounded in the retrieved context?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: N/A &nbsp;|&nbsp; max: N/A &nbsp;|&nbsp; std: N/A
+            </div>
+        </div>
+        
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #94a3b833;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Answer Relevancy</div>
+            <div style="font-size:2.2em; font-weight:700; color:#94a3b8;">N/A</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Does the answer address the user's question?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: N/A &nbsp;|&nbsp; max: N/A &nbsp;|&nbsp; std: N/A
+            </div>
+        </div>
+        
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #94a3b833;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Context Precision</div>
+            <div style="font-size:2.2em; font-weight:700; color:#94a3b8;">N/A</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Is the retrieved context relevant?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: N/A &nbsp;|&nbsp; max: N/A &nbsp;|&nbsp; std: N/A
+            </div>
+        </div>
+        
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #94a3b833;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Context Recall</div>
+            <div style="font-size:2.2em; font-weight:700; color:#94a3b8;">N/A</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Does the context contain needed information?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: N/A &nbsp;|&nbsp; max: N/A &nbsp;|&nbsp; std: N/A
+            </div>
+        </div>
+        
+        </div>
+
+        <!-- Per-Sample Table -->
+        <h2 style="font-size:1.1em; color:#94a3b8; margin-bottom:16px; font-weight:600;">
+            Per-Sample Scores
+        </h2>
+        <div style="overflow-x:auto; margin-bottom:40px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Place</th>
+                        <th>Question</th>
+                        <th>Faithfulness</th>
+                        <th>Relevancy</th>
+                        <th>Ctx Precision</th>
+                        <th>Ctx Recall</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Munnar</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Tell me about Munnar</td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Munnar</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What are the best things to do in Munnar?</td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Munnar</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What is the best time to visit Munnar?</td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Detailed Expandable Rows -->
+        <h2 style="font-size:1.1em; color:#94a3b8; margin-bottom:16px; font-weight:600;">
+            Detailed Results (click to expand)
+        </h2>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#1</strong> — Tell me about Munnar
+                &nbsp;&nbsp; <span style="color: #94a3b8;">N/A</span>
+                <span style="color: #94a3b8;">N/A</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        Munnar is a stunning, misty hill station in Kerala, famous for its sprawling, lush tea plantations. With a refreshingly cool climate—currently a comfortable 20.26°C—it is the ultimate romantic getaway and a peaceful sanctuary for nature lovers seeking a picturesque escape.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Munnar is a hill station in the Western Ghats of Kerala, India, situated at around 1,600 metres above sea level. It is known for its sprawling tea plantations, misty mountains, and cool climate. Key a...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#2</strong> — What are the best things to do in Munnar?
+                &nbsp;&nbsp; <span style="color: #94a3b8;">N/A</span>
+                <span style="color: #94a3b8;">N/A</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        Munnar is the perfect destination to immerse yourself in nature! While the provided context focuses on its serene atmosphere, the top experiences in this hill station include:
+
+*   **Exploring Tea Plantations:** Wander through the iconic, mist-covered tea gardens that define the landscape.
+*   **Enjoying the Climate:** Take in the cool, refreshing mountain air, which makes it an ideal spot for relaxing walks and romantic escapes.
+*   **Nature Sightseeing:** With its picturesque hills, it’s a paradise for nature lovers and photographers looking for a peaceful sanctuary.
+
+It is currently a comfortable 20.26°C with overcast skies—perfect weather for exploring the outdoors!
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Popular activities in Munnar include visiting tea plantations and the Tea Museum, trekking in Eravikulam National Park to spot the Nilgiri tahr, boating at Mattupetty Dam, exploring the flower gardens...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#3</strong> — What is the best time to visit Munnar?
+                &nbsp;&nbsp; <span style="color: #94a3b8;">N/A</span>
+                <span style="color: #94a3b8;">N/A</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        While the provided context doesn't specify a date range, Munnar's refreshingly cool climate makes it a fantastic year-round destination. Given its current pleasant temperature of 20.26°C, it remains an ideal, serene escape for anyone looking to enjoy the mist-covered tea plantations and lush hills.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        The best time to visit Munnar is from September to May. The monsoon season (June-August) brings heavy rainfall. Winter months (December-February) are cool and ideal for sightseeing, while summer (Marc...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+
+        <!-- Footer -->
+        <div style="margin-top:48px; padding-top:16px; border-top:1px solid #1e293b;
+                     color:#475569; font-size:0.75em; text-align:center;">
+            Travelo AI RAG Evaluation Framework &nbsp;·&nbsp; Powered by RAGAS + Gemini
+        </div>
+    </div>
+</body>
+</html>
