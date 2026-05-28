@@ -108,6 +108,7 @@ class PlaceResponse(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     budget: Optional[int] = None
+    session_id: Optional[str] = None  # Identifies the conversation thread for multi-turn memory
 
 class HotelResult(BaseModel):
     name: str
