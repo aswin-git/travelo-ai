@@ -26,12 +26,27 @@ async def summarize_place(place_name: str, context: str = "") -> str:
         logger.error(f"Gemini generation error in summarize_place for '{place_name}': {e}", exc_info=True)
         return "I'm sorry, I couldn't generate a description for this place right now."
 
-async def chat_with_context(query: str, context: str) -> str:
-    """Uses Gemini asynchronously to answer a query using the provided context (RAG)."""
+async def chat_with_context(query: str, context: str, history: list = None) -> str:
+    """Uses Gemini asynchronously to answer a query using the provided context (RAG).
+    
+    Args:
+        query: The current user message.
+        context: Retrieved context (RAG, hotel info, etc.).
+        history: Optional list of prior conversation turns [{"role": ..., "content": ...}].
+    """
+    history_block = ""
+    if history:
+        formatted = "\n".join(
+            f"{'User' if h['role'] == 'user' else 'Assistant'}: {h['content']}"
+            for h in history[-10:]  # Last 10 messages to stay within token limits
+        )
+        history_block = f"\n    Previous conversation:\n    {formatted}\n"
+
     prompt = f"""
     You are an AI travel assistant. Answer the user's query about a tourist place based on the provided context.
     Keep your response concise, engaging, and directly answering the user. If the context doesn't have the answer, just give a general helpful summary based on the context.
-
+    Use the conversation history (if any) to understand references like "there", "that place", etc.
+    {history_block}
     Context: {context}
     
     User Query: {query}

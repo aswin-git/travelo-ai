@@ -6,6 +6,7 @@ export default function App() {
     { role: 'ai', content: 'Hi there! I\'m Travelo AI. How can I help you plan your next trip?' }
   ])
   const [message, setMessage] = useState('')
+  const [sessionId] = useState(() => crypto.randomUUID())  // Stable per browser tab
   const [budget, setBudget] = useState(5000)
   const [loading, setLoading] = useState(false)
   const [latestData, setLatestData] = useState(null)
@@ -27,7 +28,7 @@ export default function App() {
       const res = await fetch('http://127.0.0.1:8000/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, budget: Number(budget) })
+        body: JSON.stringify({ message: text, budget: Number(budget), session_id: sessionId })
       })
       const data = await res.json()
       
