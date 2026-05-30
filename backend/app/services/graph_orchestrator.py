@@ -34,6 +34,9 @@ from ..models.place_model import (
     Restaurant,
     RestaurantResult,
     ReviewSummary,
+    ItineraryResult,
+    ItineraryDay,
+    ItinerarySlot,
 )
 from ..services.gemini_service import chat_with_context, model
 from ..services.place_service import create_place, get_place_by_name
@@ -80,11 +83,23 @@ class TravelState(TypedDict, total=False):
     attractions: Optional[list]
     restaurants: Optional[list]
     events: Optional[list]
+    directions: Optional[list]
     show_review_prompt: bool
     show_attractions_prompt: bool
     show_restaurants_prompt: bool
     show_events_prompt: bool
     error: Optional[str]
+    missing_info: Optional[list]
+    budget: Optional[int]
+    traveler_type: Optional[str]
+    cuisine: Optional[str]
+    adults: Optional[int]
+    start_location: Optional[str]
+    end_location: Optional[str]
+    travel_mode: Optional[str]
+    num_days: Optional[int]
+    pacing: Optional[str]
+    itinerary: Optional[dict]
 
     # ── Internal routing flag ───────────────────────────────────────────────
     _hotel_found: bool  # used by handle_specific_hotel → fallback logic
@@ -120,10 +135,13 @@ async def manage_history(state: TravelState) -> dict:
         "attractions": None,
         "restaurants": None,
         "events": None,
+        "directions": None,
+        "itinerary": None,
         "show_review_prompt": False,
         "show_attractions_prompt": False,
         "show_restaurants_prompt": False,
         "show_events_prompt": False,
+        "missing_info": None,
         "error": None,
     }
 
@@ -157,11 +175,23 @@ async def classify_intent(state: TravelState) -> dict:
     - "restaurant_search" (user asking for places to eat, restaurants, or food in a city)
     - "event_search" (user asking for things happening, events, concerts, or festivals in a city)
     - "place_info" (user asking about a tourist place, destination, weather, things to do)
+    - "destination_discovery" (user describing their preferences/vibes without naming a specific destination, e.g. 'I want to go to a beach with cliffs')
+    - "directions_search" (user asking for map directions, routes, or how to get from one place to another)
+    - "itinerary_search" (user asking to plan or generate a multi-day travel itinerary, trip plan, or schedule for a destination)
 - "destination": the city or place name mentioned, or resolved from conversation history (or null)
 - "hotel_name": the specific hotel name if mentioned (or null)
 - "place_type": one of ["city", "poi"] - "city" if it's a broad region/town (e.g. Kochi, Bangalore), "poi" if it's a specific point of interest (e.g. Fort Kochi Beach).
 - "check_in": check-in date in YYYY-MM-DD format if mentioned (or null)
 - "check_out": check-out date in YYYY-MM-DD format if mentioned (or null)
+- "budget": total budget in numbers if mentioned (or null)
+- "traveler_type": one of ["solo", "couple", "family", "business", "budget"] if mentioned (or null)
+- "adults": number of adults if mentioned (or null)
+- "cuisine": type of food or cuisine requested if mentioned (or null)
+- "start_location": starting location for directions if mentioned (or null)
+- "end_location": ending location for directions if mentioned (or null)
+- "travel_mode": one of ["driving", "transit", "walking", "flight"] if mentioned (or null)
+- "num_days": number of days for itinerary if mentioned (or null)
+- "pacing": one of ["relaxed", "packed"] if mentioned or inferred (or null)
 {history_block}
 User message: {message}"""
 
@@ -189,11 +219,60 @@ User message: {message}"""
         f"Hotel: {hotel_name}, Place Type: {place_type}, Full parsed: {parsed}"
     )
 
-    if not destination and not hotel_name:
+    if intent not in ["destination_discovery", "directions_search"] and not destination and not hotel_name:
         logger.warning("No destination or hotel detected in user message")
         return {
             "error": "I'm a travel assistant. Please ask me about a specific destination or hotel!",
             "source": "system",
+        }
+
+    budget = parsed.get("budget") or state.get("budget")
+    traveler_type = parsed.get("traveler_type") or state.get("traveler_type")
+    cuisine = parsed.get("cuisine") or state.get("cuisine")
+    adults = parsed.get("adults") or state.get("adults")
+    check_in = parsed.get("check_in") or state.get("check_in")
+    check_out = parsed.get("check_out") or state.get("check_out")
+    start_location = parsed.get("start_location") or state.get("start_location")
+    end_location = parsed.get("end_location") or state.get("end_location")
+    travel_mode = parsed.get("travel_mode") or state.get("travel_mode")
+    num_days = parsed.get("num_days") or state.get("num_days")
+    pacing = parsed.get("pacing") or state.get("pacing")
+
+    logger.info(
+        f"Resolved Context -> Intent: {intent}, Dest: {destination}, Budget: {budget}, "
+        f"Traveler: {traveler_type}, Dates: {check_in} to {check_out}, "
+        f"Route: {start_location} to {end_location} ({travel_mode})"
+    )
+
+    # Missing info logic
+    missing_info = []
+    if intent == "hotel_search":
+        if not check_in: missing_info.append("dates")
+        if not traveler_type: missing_info.append("traveler_type")
+        if not budget: missing_info.append("budget")
+    elif intent == "restaurant_search":
+        if not cuisine: missing_info.append("cuisine")
+    elif intent == "directions_search":
+        if not start_location: missing_info.append("start_location")
+        if not end_location: missing_info.append("end_location")
+        if not travel_mode: missing_info.append("travel_mode")
+    elif intent == "itinerary_search":
+        if not num_days: missing_info.append("num_days")
+        if not pacing: missing_info.append("pacing")
+
+    if missing_info:
+        logger.info(f"Missing info for {intent}: {missing_info}")
+        return {
+            "error": "I need a few more details to find the best options for you.",
+            "source": "system",
+            "missing_info": missing_info,
+            "intent": intent,
+            "destination": destination,
+            "start_location": start_location,
+            "end_location": end_location,
+            "travel_mode": travel_mode,
+            "num_days": num_days,
+            "pacing": pacing,
         }
 
     return {
@@ -201,8 +280,18 @@ User message: {message}"""
         "destination": destination,
         "hotel_name": hotel_name,
         "place_type": place_type,
-        "check_in": parsed.get("check_in"),
-        "check_out": parsed.get("check_out"),
+        "check_in": check_in,
+        "check_out": check_out,
+        "budget": budget,
+        "traveler_type": traveler_type,
+        "cuisine": cuisine,
+        "adults": adults,
+        "start_location": start_location,
+        "end_location": end_location,
+        "travel_mode": travel_mode,
+        "num_days": num_days,
+        "pacing": pacing,
+        "missing_info": None,
     }
 
 
@@ -321,6 +410,9 @@ async def handle_hotel_search(state: TravelState, config: RunnableConfig) -> dic
         destination=destination,
         check_in=state.get("check_in"),
         check_out=state.get("check_out"),
+        adults=state.get("adults") or 2,
+        budget=state.get("budget"),
+        traveler_type=state.get("traveler_type")
     )
 
     if hotels_data:
@@ -457,7 +549,7 @@ async def handle_restaurants(state: TravelState, config: RunnableConfig) -> dict
 
     # Cache miss or stale
     logger.info(f"CACHE MISS/STALE: Fetching fresh restaurants for {destination}")
-    restaurants_data = search_restaurants(destination)
+    restaurants_data = search_restaurants(destination, cuisine=state.get("cuisine"))
 
     if restaurants_data:
         if not place:
@@ -588,8 +680,175 @@ async def handle_place_info(state: TravelState, config: RunnableConfig) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  NODE: save_response  (runs last — appends assistant response to history)
+#  NODE: handle_destination_discovery
 # ═══════════════════════════════════════════════════════════════════════════
+async def handle_destination_discovery(state: TravelState, config: RunnableConfig) -> dict:
+    """Delegates to RAG service for semantic search and recommendation."""
+    from ..services.rag_service import semantic_place_discovery
+    
+    message = state["message"]
+    response = await semantic_place_discovery(message)
+    
+    return {
+        "response_text": response,
+        "source": "semantic_discovery"
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  NODE: handle_directions
+# ═══════════════════════════════════════════════════════════════════════════
+async def handle_directions(state: TravelState, config: RunnableConfig) -> dict:
+    """Fetches and compares directions using map_service."""
+    from ..services.map_service import compare_directions
+    
+    start_location = state.get("start_location")
+    end_location = state.get("end_location")
+    travel_mode = state.get("travel_mode")
+
+    logger.info(f"Fetching directions from {start_location} to {end_location} via {travel_mode}")
+    directions_data = compare_directions(start_location, end_location, travel_mode)
+
+    if directions_data:
+        return {
+            "response_text": f"Here are the best ways to get from {start_location} to {end_location}! 🗺️",
+            "source": "google_maps_directions",
+            "directions": [d.model_dump() for d in directions_data],
+        }
+
+    return {
+        "response_text": f"I couldn't find any routes from {start_location} to {end_location} right now.",
+        "source": "google_maps_directions",
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  NODE: handle_itinerary
+# ═══════════════════════════════════════════════════════════════════════════
+async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
+    """Generates a structured multi-day travel itinerary using Gemini."""
+    db: Session = config["configurable"]["db"]
+    destination = state.get("destination", "")
+    num_days = state.get("num_days", 3)
+    pacing = state.get("pacing", "relaxed")
+    budget = state.get("budget")
+    traveler_type = state.get("traveler_type")
+
+    logger.info(f"Generating {num_days}-day {pacing} itinerary for {destination}")
+
+    # ── Gather context from our existing engines ────────────────────────────
+    context_parts = []
+
+    # RAG context
+    try:
+        rag_result = await process_chat_query(db, f"Tell me about {destination}", destination)
+        if rag_result.get("response"):
+            context_parts.append(f"About {destination}:\n{rag_result['response'][:1500]}")
+    except Exception as e:
+        logger.warning(f"RAG context fetch failed: {e}")
+
+    # Cached attractions
+    from ..services.attraction_service import search_attractions
+    try:
+        attractions = search_attractions(destination)
+        if attractions:
+            top_attrs = [f"- {a['name']} (Rating: {a.get('rating', 'N/A')}): {a.get('description', '')[:100]}" for a in attractions[:8]]
+            context_parts.append(f"Top Attractions in {destination}:\n" + "\n".join(top_attrs))
+    except Exception as e:
+        logger.warning(f"Attractions context fetch failed: {e}")
+
+    # Cached restaurants
+    from ..services.restaurant_service import search_restaurants
+    try:
+        restaurants = search_restaurants(destination)
+        if restaurants:
+            top_rests = [f"- {r['name']} (Rating: {r.get('rating', 'N/A')}, Price: {r.get('price_level', 'N/A')}): {r.get('description', '')[:80]}" for r in restaurants[:6]]
+            context_parts.append(f"Top Restaurants in {destination}:\n" + "\n".join(top_rests))
+    except Exception as e:
+        logger.warning(f"Restaurants context fetch failed: {e}")
+
+    context_block = "\n\n".join(context_parts) if context_parts else f"General knowledge about {destination}."
+
+    # ── Build the structured generation prompt ──────────────────────────────
+    stops_per_day = "2-3 activities plus meals" if pacing == "relaxed" else "4-6 activities plus meals"
+    budget_hint = f"The traveler has a budget of ₹{budget}." if budget else ""
+    traveler_hint = f"The traveler type is: {traveler_type}." if traveler_type else ""
+
+    itinerary_prompt = f"""You are a world-class travel planner. Generate a detailed {num_days}-day travel itinerary for {destination}.
+
+Pacing: {pacing} ({stops_per_day} per day).
+{budget_hint}
+{traveler_hint}
+
+USE THE FOLLOWING REAL DATA about {destination} to fill in real place names, real restaurants, and real attractions.
+Do NOT invent fictional places — use the ones listed below whenever possible:
+
+{context_block}
+
+Return a JSON object with this EXACT structure:
+{{
+  "destination": "{destination}",
+  "total_days": {num_days},
+  "pacing": "{pacing}",
+  "days": [
+    {{
+      "day_number": 1,
+      "theme": "A short catchy theme for the day, e.g. 'Coastal Explorations'",
+      "slots": [
+        {{
+          "time_slot": "Morning",
+          "time_label": "09:00 AM",
+          "activity_name": "Name of the place or activity",
+          "description": "A 1-2 sentence vivid description of what to do there",
+          "duration_minutes": 120,
+          "cost_estimate": "₹500" or null,
+          "category": "attraction",
+          "rating": 4.5 or null,
+          "travel_to_next": "🚗 20 mins drive" or null
+        }},
+        ...more slots for Lunch, Afternoon, Evening, Dinner...
+      ]
+    }},
+    ...more days...
+  ]
+}}
+
+Rules:
+- category must be one of: "attraction", "restaurant", "hotel", "travel", "activity"
+- time_slot must be one of: "Morning", "Lunch", "Afternoon", "Evening", "Dinner", "Night"
+- Include breakfast/lunch/dinner slots with category "restaurant" using real restaurant names from the data
+- Include travel_to_next between stops with estimated drive/walk time
+- Make the day themes creative and evocative
+- Ensure logical geographic flow (don't zigzag across the city)
+- Return ONLY valid JSON, no markdown formatting"""
+
+    try:
+        response = model.generate_content(
+            itinerary_prompt,
+            generation_config={"response_mime_type": "application/json"},
+        )
+        # Use raw_decode to handle cases where Gemini appends extra data after the JSON
+        text = response.text.strip()
+        decoder = json.JSONDecoder()
+        raw, _ = decoder.raw_decode(text)
+
+        # Validate with Pydantic
+        itinerary = ItineraryResult(**raw)
+        logger.info(f"Successfully generated {itinerary.total_days}-day itinerary for {destination}")
+
+        return {
+            "response_text": f"Here's your {num_days}-day {pacing} itinerary for {destination}! 🗺️✨",
+            "source": "gemini_itinerary",
+            "itinerary": itinerary.model_dump(),
+        }
+    except (json.JSONDecodeError, Exception) as e:
+        logger.error(f"Itinerary generation failed: {e}", exc_info=True)
+        return {
+            "response_text": f"I had trouble generating the itinerary for {destination}. Please try again!",
+            "source": "gemini_itinerary",
+        }
+
+
 async def save_response(state: TravelState) -> dict:
     """Appends the assistant's response to conversation history for future turns."""
     history = list(state.get("conversation_history") or [])
@@ -623,6 +882,9 @@ def route_by_intent(state: TravelState) -> str:
         "restaurant_search": "handle_restaurants",
         "event_search": "handle_events",
         "place_info": "handle_place_info",
+        "destination_discovery": "handle_destination_discovery",
+        "directions_search": "handle_directions",
+        "itinerary_search": "handle_itinerary",
     }
     return route_map.get(intent, "handle_place_info")
 
@@ -650,6 +912,9 @@ def _build_travel_graph():
     graph.add_node("handle_restaurants", handle_restaurants)
     graph.add_node("handle_events", handle_events)
     graph.add_node("handle_place_info", handle_place_info)
+    graph.add_node("handle_destination_discovery", handle_destination_discovery)
+    graph.add_node("handle_directions", handle_directions)
+    graph.add_node("handle_itinerary", handle_itinerary)
     graph.add_node("save_response", save_response)
 
     # Entry: START → manage_history → classify_intent
@@ -667,6 +932,9 @@ def _build_travel_graph():
             "handle_restaurants": "handle_restaurants",
             "handle_events": "handle_events",
             "handle_place_info": "handle_place_info",
+            "handle_destination_discovery": "handle_destination_discovery",
+            "handle_directions": "handle_directions",
+            "handle_itinerary": "handle_itinerary",
             "save_response": "save_response",  # error path
         },
     )
@@ -687,6 +955,9 @@ def _build_travel_graph():
     graph.add_edge("handle_restaurants", "save_response")
     graph.add_edge("handle_events", "save_response")
     graph.add_edge("handle_place_info", "save_response")
+    graph.add_edge("handle_destination_discovery", "save_response")
+    graph.add_edge("handle_directions", "save_response")
+    graph.add_edge("handle_itinerary", "save_response")
     graph.add_edge("save_response", END)
 
     # Compile with MemorySaver for multi-turn conversation memory
@@ -701,25 +972,30 @@ travel_graph = _build_travel_graph()
 # ═══════════════════════════════════════════════════════════════════════════
 #  PUBLIC ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════════
-async def run_travel_graph(message: str, db: Session, session_id: str = None) -> dict:
+async def run_travel_graph(request: Any, db: Session) -> dict:
     """
     Runs the LangGraph travel agent for a single user message.
 
     Args:
-        message: The user's chat message.
+        request: The ChatRequest object containing message, budget, etc.
         db: SQLAlchemy database session.
-        session_id: Optional session identifier for multi-turn memory.
-                    Maps to LangGraph's thread_id. If None, a unique
-                    one-off session is created.
-
-    Returns:
-        A dict whose keys match ChatResponse fields (response, source, etc.).
     """
-    thread_id = session_id or uuid4().hex
+    thread_id = request.session_id or uuid4().hex
     config = {"configurable": {"thread_id": thread_id, "db": db}}
 
     initial_state: TravelState = {
-        "message": message,
+        "message": request.message,
+        "budget": request.budget,
+        "traveler_type": request.traveler_type,
+        "cuisine": request.cuisine,
+        "adults": request.adults,
+        "check_in": request.check_in,
+        "check_out": request.check_out,
+        "start_location": request.start_location,
+        "end_location": request.end_location,
+        "travel_mode": request.travel_mode,
+        "num_days": request.num_days,
+        "pacing": request.pacing,
     }
 
     logger.info(f"Running travel graph with thread_id={thread_id}")
@@ -741,10 +1017,13 @@ async def run_travel_graph(message: str, db: Session, session_id: str = None) ->
         "attractions",
         "restaurants",
         "events",
+        "directions",
+        "itinerary",
         "show_review_prompt",
         "show_attractions_prompt",
         "show_restaurants_prompt",
         "show_events_prompt",
+        "missing_info",
     ):
         if result.get(key) is not None:
             output[key] = result[key]

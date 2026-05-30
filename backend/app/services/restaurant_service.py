@@ -38,23 +38,23 @@ def save_restaurants_to_db(db: Session, restaurants_data: List[Dict[str, Any]], 
         db.rollback()
         print(f"Error saving restaurants to DB: {e}")
 
-def search_restaurants(destination: str) -> List[Dict[str, Any]]:
-    """Searches for top restaurants in a city using SerpAPI's Google Maps engine.
-    
-    Args:
-        destination: City or place name to search restaurants in.
-    
-    Returns:
-        List of restaurant dicts with name, rating, description, thumbnail, price_level, and data_id.
-    """
+import re
+
+def search_restaurants(destination: str, cuisine: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Searches for restaurants and applies a cuisine-matching and rating scoring engine."""
     api_key = settings.SERPAPI_KEY
     if not api_key:
         print("Restaurant search error: SERPAPI_KEY not configured")
         return []
 
+    # If cuisine is specified, append it to the search query for better SerpAPI results
+    query_str = f"top rated restaurants in {destination}"
+    if cuisine:
+        query_str = f"top rated {cuisine} restaurants in {destination}"
+
     params = {
         "engine": "google_maps",
-        "q": f"top rated restaurants in {destination}",
+        "q": query_str,
         "type": "search",
         "hl": "en",
         "gl": "in",
@@ -67,19 +67,46 @@ def search_restaurants(destination: str) -> List[Dict[str, Any]]:
         
         locals_results = results.get("local_results", [])
         
-        restaurants = []
-        for loc in locals_results[:5]:  # Return top 5 restaurants
-            restaurants.append({
-                "name": loc.get("title", "Unknown Restaurant"),
-                "rating": loc.get("rating"),
-                "reviews": loc.get("reviews"),
-                "description": loc.get("description", ""),
+        scored_restaurants = []
+        for loc in locals_results[:20]:  # Evaluate top 20
+            name = loc.get("title", "Unknown Restaurant")
+            desc = loc.get("description", "")
+            type_str = loc.get("type", "")
+            
+            # 1. Base Rating Score (out of 10)
+            rating = loc.get("rating") or 0.0
+            rating_score = (rating / 5.0) * 10
+            
+            # 2. Cuisine Match Score (out of 15)
+            cuisine_score = 0
+            if cuisine:
+                c_lower = cuisine.lower()
+                combined_text = (name + " " + desc + " " + type_str).lower()
+                # Exact match gets 15, partial gets 5
+                if re.search(r'\b' + re.escape(c_lower) + r'\b', combined_text):
+                    cuisine_score = 15
+                elif c_lower in combined_text:
+                    cuisine_score = 5
+            
+            # 3. Popularity (out of 5)
+            reviews = loc.get("reviews") or 0
+            pop_score = min(5, (reviews / 1000) * 5)
+            
+            total_score = rating_score + cuisine_score + pop_score
+            
+            scored_restaurants.append({
+                "name": name,
+                "rating": rating,
+                "reviews": reviews,
+                "description": desc,
                 "thumbnail": loc.get("thumbnail", ""),
                 "data_id": loc.get("data_id"),
-                "price_level": loc.get("price", "")
+                "price_level": loc.get("price", ""),
+                "total_score": total_score
             })
-        
-        return restaurants
+            
+        scored_restaurants.sort(key=lambda x: x["total_score"], reverse=True)
+        return scored_restaurants[:5]
         
     except Exception as e:
         print(f"Restaurant search error: {e}")

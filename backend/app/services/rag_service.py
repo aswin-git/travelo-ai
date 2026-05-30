@@ -4,9 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.orm import Session
 from .place_service import get_place_by_name, create_place
 from .osm_service import fetch_osm_data
-from .wikipedia_service import fetch_wikipedia_summary
-from .gemini_service import summarize_place, chat_with_context
+from .wikipedia_service import fetch_full_wikivoyage_content
+from .gemini_service import summarize_place, chat_with_context, synthesize_place_knowledge, discover_and_recommend
 from .chroma_service import add_document, query_documents
+from ..database import SessionLocal
 from .weather_service import fetch_weather
 from .review_service import get_place_description
 from ..utils.logger import get_logger
@@ -23,7 +24,7 @@ _executor = ThreadPoolExecutor(max_workers=4)
 def _safe_fetch_wikipedia(place_name: str) -> dict | None:
     """Wraps Wikipedia fetch with fault tolerance."""
     try:
-        return fetch_wikipedia_summary(place_name)
+        return fetch_full_wikivoyage_content(place_name)
     except Exception as e:
         logger.warning(f"Wikipedia fetch failed for '{place_name}': {e}", exc_info=True)
         return None
@@ -69,33 +70,18 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
     if existing_place:
         logger.info(f"Found {place_name} in database. Retrieving context from ChromaDB...")
 
-        # FIX 5: Validate Chroma results against similarity threshold before using
-        context = ""
-        try:
-            chroma_results = query_documents(place_name)
-            if (
-                chroma_results
-                and chroma_results.get("documents")
-                and chroma_results["documents"][0]
-            ):
-                distances = chroma_results.get("distances", [[]])[0]
-                best_score = distances[0] if distances else 0
-
-                if best_score >= CHROMA_SIMILARITY_THRESHOLD:
-                    context = chroma_results["documents"][0][0]
-                    logger.info(f"Chroma result accepted (score: {best_score:.3f})")
-                else:
-                    logger.warning(
-                        f"Chroma result rejected — score {best_score:.3f} below "
-                        f"threshold {CHROMA_SIMILARITY_THRESHOLD}. "
-                        f"Falling back to DB description."
-                    )
-                    context = existing_place.description or ""
-            else:
-                context = existing_place.description or ""
-        except Exception as e:
-            logger.warning(f"ChromaDB query failed: {e}", exc_info=True)
-            context = existing_place.description or ""
+        context = existing_place.description or ""
+        
+        # If the DB description is very short or empty, try to fetch all chunks from ChromaDB
+        if not context or len(context) < 50:
+            try:
+                chroma_results = query_documents(place_name, n_results=5)
+                if chroma_results and chroma_results.get("documents") and chroma_results["documents"][0]:
+                    docs = chroma_results["documents"][0]
+                    context = "\n\n".join(docs)
+                    logger.info(f"Using {len(docs)} chunks from ChromaDB as context fallback.")
+            except Exception as e:
+                logger.warning(f"ChromaDB query failed: {e}", exc_info=True)
 
         # FIX 2: Fetch weather at runtime and inject — never persist it
         weather_info = _safe_fetch_weather(
@@ -143,7 +129,7 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
     raw_context = ""
 
     if wiki_data:
-        raw_context += f"Wikipedia Summary: {wiki_data['summary']} "
+        raw_context += f"Wikivoyage Summary: {wiki_data['summary']} "
 
     if osm_data:
         raw_context += f"Category: {osm_data.get('category', 'tourist attraction')}. "
@@ -176,7 +162,11 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
     if weather_info:
         raw_context_for_llm += f" | {weather_info}"
 
-    clean_description = await summarize_place(place_name, raw_context) # no weather in stored text
+    synthesized_data = await synthesize_place_knowledge(place_name, raw_context)
+    
+    clean_description = ""
+    for key, value in synthesized_data.items():
+        clean_description += f"### {key.replace('_', ' ').title()}\n{value}\n\n"
 
     # 5. Save to PostgreSQL (without weather data)
     new_place_data = {
@@ -208,19 +198,19 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
         }
 
     # 6. Save embeddings to ChromaDB — store only static description, not weather
-    doc_id = str(saved_place.id)
-    doc_text = f"{saved_place.name}. {saved_place.description}"
-
     try:
-        logger.info(f"Indexing '{place_name}' in ChromaDB...")
-        add_document(
-            doc_id=doc_id,
-            text=doc_text,
-            metadata={"name": saved_place.name, "category": saved_place.category or ""},
-        )
+        logger.info(f"Indexing '{place_name}' in ChromaDB in chunks...")
+        for key, value in synthesized_data.items():
+            doc_chunk_id = f"{saved_place.id}-{key}"
+            doc_text = f"{saved_place.name} - {key.replace('_', ' ').title()}: {value}"
+            add_document(
+                doc_id=doc_chunk_id,
+                text=doc_text,
+                metadata={"name": saved_place.name, "category": saved_place.category or "", "section": key},
+            )
     except Exception as e:
         # FIX 3: ChromaDB failure should not crash the entire response
-        logger.error(f"ChromaDB indexing failed for '{place_name}': {e}", exc_info=True)
+        logger.error(f"ChromaDB chunk indexing failed for '{place_name}': {e}", exc_info=True)
 
     # 7. Generate and return response using weather-enriched context
     bot_response = await chat_with_context(message, raw_context_for_llm)
@@ -230,3 +220,47 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
         "source": "fetched_and_saved",
         "place_info": saved_place,
     }
+
+async def _background_ingest(place_name: str):
+    """Background task to ingest a place into the database."""
+    db = SessionLocal()
+    try:
+        logger.info(f"Starting background ingestion for {place_name}")
+        await process_chat_query(db, f"Tell me about {place_name}", place_name)
+    except Exception as e:
+        logger.error(f"Background ingestion failed for {place_name}: {e}")
+    finally:
+        db.close()
+
+async def semantic_place_discovery(message: str) -> str:
+    """Searches ChromaDB for a vibe/preference and uses Gemini to recommend."""
+    logger.info(f"Semantic discovery for: {message}")
+    try:
+        chroma_results = query_documents(message, n_results=5)
+        
+        retrieved_context = ""
+        if chroma_results and chroma_results.get("documents") and chroma_results["documents"][0]:
+            docs = chroma_results["documents"][0]
+            metadatas = chroma_results.get("metadatas", [[]])[0]
+            
+            for i, doc in enumerate(docs):
+                place_name = metadatas[i].get("name", "Unknown") if metadatas and len(metadatas) > i else "Unknown"
+                retrieved_context += f"- Match {i+1} ({place_name}): {doc}\n"
+        
+        if not retrieved_context:
+            retrieved_context = "No close matches found in database."
+            
+        gemini_result = await discover_and_recommend(message, retrieved_context)
+        
+        # Check for cold start ingestion
+        places_to_ingest = gemini_result.get("trigger_ingestion", [])
+        if places_to_ingest:
+            logger.info(f"Triggering background ingestion for: {places_to_ingest}")
+            for place in places_to_ingest:
+                asyncio.create_task(_background_ingest(place))
+                
+        return gemini_result.get("response", "I found some great options!")
+        
+    except Exception as e:
+        logger.error(f"Semantic discovery failed: {e}", exc_info=True)
+        return "I'm having trouble searching for that vibe right now."

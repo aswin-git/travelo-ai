@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 from ..database import Base
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, List
 
 class Place(Base):
     __tablename__ = "places"
@@ -109,6 +109,16 @@ class ChatRequest(BaseModel):
     message: str
     budget: Optional[int] = None
     session_id: Optional[str] = None  # Identifies the conversation thread for multi-turn memory
+    traveler_type: Optional[str] = None
+    cuisine: Optional[str] = None
+    adults: Optional[int] = None
+    check_in: Optional[str] = None
+    check_out: Optional[str] = None
+    start_location: Optional[str] = None
+    end_location: Optional[str] = None
+    travel_mode: Optional[str] = None
+    num_days: Optional[int] = None
+    pacing: Optional[str] = None  # "relaxed" or "packed"
 
 class HotelResult(BaseModel):
     name: str
@@ -148,6 +158,39 @@ class EventResult(BaseModel):
     thumbnail: Optional[str] = None
     venue_name: Optional[str] = None
 
+class DirectionResult(BaseModel):
+    route_type: str  # "Fastest", "Cheapest", "Fewest Transfers"
+    mode: str
+    duration: str
+    distance: str
+    transfers: Optional[int] = None
+    price: Optional[str] = None
+    summary: str
+    link: Optional[str] = None
+    steps: Optional[list[str]] = None
+
+class ItinerarySlot(BaseModel):
+    time_slot: str       # "Morning", "Lunch", "Afternoon", "Evening", "Dinner"
+    time_label: str      # "09:00 AM"
+    activity_name: str
+    description: str
+    duration_minutes: int
+    cost_estimate: Optional[str] = None
+    category: str        # "attraction", "restaurant", "hotel", "travel", "activity"
+    rating: Optional[float] = None
+    travel_to_next: Optional[str] = None  # "🚗 15 mins drive"
+
+class ItineraryDay(BaseModel):
+    day_number: int
+    theme: str
+    slots: List[ItinerarySlot]
+
+class ItineraryResult(BaseModel):
+    destination: str
+    total_days: int
+    pacing: str
+    days: List[ItineraryDay]
+
 class ChatResponse(BaseModel):
     response: str
     source: str
@@ -156,7 +199,10 @@ class ChatResponse(BaseModel):
     attractions: Optional[list[AttractionResult]] = None
     restaurants: Optional[list[RestaurantResult]] = None
     events: Optional[list[EventResult]] = None
+    directions: Optional[list[DirectionResult]] = None
+    itinerary: Optional[ItineraryResult] = None
     show_review_prompt: Optional[bool] = False
     show_attractions_prompt: Optional[bool] = False
     show_restaurants_prompt: Optional[bool] = False
     show_events_prompt: Optional[bool] = False
+    missing_info: Optional[list[str]] = None

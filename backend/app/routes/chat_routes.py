@@ -27,7 +27,7 @@ async def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
     """Main chat endpoint — delegates all orchestration to the LangGraph travel agent."""
     logger.info(f"Incoming chat request: {request.message}")
     try:
-        result = await run_travel_graph(request.message, db, session_id=request.session_id)
+        result = await run_travel_graph(request, db)
 
         # Build ChatResponse from graph output, filtering to valid fields only
         response_fields = {
