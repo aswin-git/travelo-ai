@@ -41,23 +41,17 @@ def save_hotels_to_db(db: Session, hotels_data: List[Dict[str, Any]], place_id: 
         db.rollback()
         print(f"Error saving hotels to DB: {e}")
 
+import math
+
 def search_hotels(
     destination: str,
     check_in: Optional[str] = None,
     check_out: Optional[str] = None,
-    adults: int = 2
+    adults: int = 2,
+    budget: Optional[int] = None,
+    traveler_type: Optional[str] = None
 ) -> List[Dict[str, Any]]:
-    """Searches for hotels using SerpAPI's Google Hotels engine.
-    
-    Args:
-        destination: City or place name to search hotels in.
-        check_in: Check-in date in YYYY-MM-DD format. Defaults to tomorrow.
-        check_out: Check-out date in YYYY-MM-DD format. Defaults to check_in + 2 nights.
-        adults: Number of adults. Defaults to 2.
-    
-    Returns:
-        List of hotel dicts with name, price, rating, description, link, thumbnail.
-    """
+    """Searches for hotels using SerpAPI and applies a 6-factor scoring engine."""
     api_key = settings.SERPAPI_KEY
     if not api_key:
         print("Hotel search error: SERPAPI_KEY not configured")
@@ -88,23 +82,73 @@ def search_hotels(
         
         properties = results.get("properties", [])
         
-        hotels = []
-        for hotel in properties[:5]:  # Return top 5 hotels
+        scored_hotels = []
+        for hotel in properties[:20]:  # Fetch up to 20 for scoring
+            # 1. Rating Score (out of 10)
+            rating = hotel.get("overall_rating") or 0.0
+            rating_score = (rating / 5.0) * 10
+            
+            # 2. Review Count Score (out of 10, log scale)
+            reviews = hotel.get("reviews") or 0
+            review_score = min(10, math.log10(reviews + 1) * 2.5)
+            
+            # 3. Value/Budget Score (out of 10)
             rate = hotel.get("rate_per_night", {})
-            hotels.append({
+            price_str = rate.get("lowest", "0").replace('₹', '').replace(',', '').strip()
+            try:
+                price_val = int(price_str)
+            except:
+                price_val = 0
+                
+            value_score = 5 # Default
+            if budget and price_val > 0:
+                diff = abs(budget - price_val)
+                # 0 diff = 10, >= budget diff = 0
+                value_score = max(0, 10 - (diff / budget) * 10)
+                
+            # 4 & 6. Traveler Type & Context Relevance (out of 10)
+            desc_text = (hotel.get("description", "") + " " + hotel.get("name", "")).lower()
+            traveler_score = 0
+            if traveler_type:
+                tt = traveler_type.lower()
+                if tt == "family" and any(k in desc_text for k in ["family", "kids", "children", "spacious"]):
+                    traveler_score = 10
+                elif tt == "couple" and any(k in desc_text for k in ["romantic", "couple", "honeymoon", "adults"]):
+                    traveler_score = 10
+                elif tt == "business" and any(k in desc_text for k in ["business", "desk", "conference", "work"]):
+                    traveler_score = 10
+                elif tt == "solo" and any(k in desc_text for k in ["solo", "hostel", "backpacker", "safe"]):
+                    traveler_score = 10
+                elif tt == "budget" and any(k in desc_text for k in ["budget", "cheap", "affordable", "hostel"]):
+                    traveler_score = 10
+                    
+            # 5. Amenities Score (out of 10)
+            amenities = hotel.get("amenities", [])
+            amenities_str = " ".join([a.lower() for a in amenities]) + desc_text
+            amenities_score = 0
+            if "wifi" in amenities_str or "wi-fi" in amenities_str: amenities_score += 3
+            if "pool" in amenities_str: amenities_score += 3
+            if "breakfast" in amenities_str: amenities_score += 4
+            
+            total_score = rating_score + review_score + value_score + traveler_score + amenities_score
+            
+            scored_hotels.append({
                 "name": hotel.get("name", "Unknown Hotel"),
                 "price": rate.get("lowest", "N/A"),
-                "rating": hotel.get("overall_rating"),
-                "reviews": hotel.get("reviews"),
+                "rating": rating,
+                "reviews": reviews,
                 "description": hotel.get("description", ""),
                 "link": hotel.get("link", ""),
                 "thumbnail": hotel.get("images", [{}])[0].get("thumbnail", "") if hotel.get("images") else "",
                 "check_in": check_in,
                 "check_out": check_out,
                 "property_token": hotel.get("property_token"),
+                "total_score": total_score
             })
-        
-        return hotels
+            
+        # Rank and return top 5
+        scored_hotels.sort(key=lambda x: x["total_score"], reverse=True)
+        return scored_hotels[:5]
         
     except Exception as e:
         print(f"Hotel search error: {e}")

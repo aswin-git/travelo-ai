@@ -7,11 +7,26 @@ export default function App() {
   ])
   const [message, setMessage] = useState('')
   const [sessionId] = useState(() => crypto.randomUUID())  // Stable per browser tab
-  const [budget, setBudget] = useState(5000)
+  const [budget, setBudget] = useState('')
   const [loading, setLoading] = useState(false)
   const [latestData, setLatestData] = useState(null)
   const [activeTab, setActiveTab] = useState('Hotels')
   const [destination, setDestination] = useState('Explore')
+  const [missingInfo, setMissingInfo] = useState(null)
+  const [travelerType, setTravelerType] = useState('')
+  const [cuisine, setCuisine] = useState('')
+  const [adults, setAdults] = useState(2)
+  const [checkIn, setCheckIn] = useState('')
+  const [checkOut, setCheckOut] = useState('')
+  const [startLocation, setStartLocation] = useState('')
+  const [endLocation, setEndLocation] = useState('')
+  const [travelMode, setTravelMode] = useState('')
+  const [lastMessage, setLastMessage] = useState('')
+  const [expandedRoute, setExpandedRoute] = useState(null)
+  const [numDays, setNumDays] = useState(3)
+  const [pacing, setPacing] = useState('')
+  const [activeDay, setActiveDay] = useState(1)
+  const [itineraryData, setItineraryData] = useState(null)
 
   const chatEndRef = useRef(null)
 
@@ -23,14 +38,36 @@ export default function App() {
     const userMsg = { role: 'user', content: text }
     setChatHistory(prev => [...prev, userMsg])
     setLoading(true)
-
     try {
+      const payload = { 
+        message: text, 
+        budget: budget ? Number(budget) : null, 
+        session_id: sessionId,
+        traveler_type: travelerType || null,
+        cuisine: cuisine || null,
+        adults: adults ? Number(adults) : null,
+        check_in: checkIn || null,
+        check_out: checkOut || null,
+        start_location: startLocation || null,
+        end_location: endLocation || null,
+        travel_mode: travelMode || null,
+        num_days: numDays ? Number(numDays) : null,
+        pacing: pacing || null
+      }
+      
       const res = await fetch('http://127.0.0.1:8000/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, budget: Number(budget), session_id: sessionId })
+        body: JSON.stringify(payload)
       })
       const data = await res.json()
+      
+      if (data.missing_info && data.missing_info.length > 0) {
+        setMissingInfo(data.missing_info)
+        setLastMessage(text)
+        setLoading(false)
+        return
+      }
       
       let aiContent = data.response || 'I\'ve updated your recommendations on the right.'
       
@@ -46,6 +83,13 @@ export default function App() {
       } else if (data.events && data.events.length > 0) {
         setLatestData({ type: 'event_recommendation', results: data.events })
         setActiveTab('Events')
+      } else if (data.directions && data.directions.length > 0) {
+        setLatestData({ type: 'directions_recommendation', results: data.directions })
+        setActiveTab('Directions')
+      } else if (data.itinerary) {
+        setItineraryData(data.itinerary)
+        setActiveDay(1)
+        setActiveTab('Itinerary')
       }
 
       if (data.place_info) {
@@ -66,6 +110,12 @@ export default function App() {
     const text = message
     setMessage('')
     await sendDirectMessage(text)
+  }
+
+  const handleMissingInfoSubmit = (e) => {
+    e.preventDefault()
+    setMissingInfo(null)
+    sendDirectMessage(lastMessage)
   }
 
   const handleReviewRequest = async (placeName) => {
@@ -134,6 +184,93 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {missingInfo && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>I need a few more details! 🌍</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.9rem' }}>To give you the best recommendations, please fill in:</p>
+            <form onSubmit={handleMissingInfoSubmit} className="missing-info-form">
+              {missingInfo.includes('dates') && (
+                <div className="form-group">
+                  <label>Check-in Date</label>
+                  <input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} required />
+                  <label>Check-out Date</label>
+                  <input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} required />
+                </div>
+              )}
+              {missingInfo.includes('traveler_type') && (
+                <div className="form-group">
+                  <label>Who are you traveling with?</label>
+                  <select value={travelerType} onChange={e => setTravelerType(e.target.value)} required>
+                    <option value="" disabled>Select traveler type...</option>
+                    <option value="solo">Solo</option>
+                    <option value="couple">Couple</option>
+                    <option value="family">Family</option>
+                    <option value="business">Business</option>
+                    <option value="budget">Budget Backpacker</option>
+                  </select>
+                  <label style={{ marginTop: '8px' }}>Number of Adults</label>
+                  <input type="number" value={adults} onChange={e => setAdults(e.target.value)} min="1" />
+                </div>
+              )}
+              {missingInfo.includes('budget') && (
+                <div className="form-group">
+                  <label>Target Budget (₹)</label>
+                  <input type="number" value={budget} onChange={e => setBudget(e.target.value)} required />
+                </div>
+              )}
+              {missingInfo.includes('cuisine') && (
+                <div className="form-group">
+                  <label>Cuisine Preference</label>
+                  <input type="text" value={cuisine} onChange={e => setCuisine(e.target.value)} placeholder="e.g. Italian, Mexican, Seafood" required />
+                </div>
+              )}
+              {missingInfo.includes('start_location') && (
+                <div className="form-group">
+                  <label>Start Location</label>
+                  <input type="text" value={startLocation} onChange={e => setStartLocation(e.target.value)} placeholder="e.g. JFK Airport" required />
+                </div>
+              )}
+              {missingInfo.includes('end_location') && (
+                <div className="form-group">
+                  <label>End Location</label>
+                  <input type="text" value={endLocation} onChange={e => setEndLocation(e.target.value)} placeholder="e.g. Times Square" required />
+                </div>
+              )}
+              {missingInfo.includes('travel_mode') && (
+                <div className="form-group">
+                  <label>Travel Mode</label>
+                  <select value={travelMode} onChange={e => setTravelMode(e.target.value)} required>
+                    <option value="" disabled>Select mode...</option>
+                    <option value="driving">Driving 🚗</option>
+                    <option value="transit">Transit 🚆</option>
+                    <option value="walking">Walking 🚶</option>
+                    <option value="flight">Flight ✈️</option>
+                  </select>
+                </div>
+              )}
+              {missingInfo.includes('num_days') && (
+                <div className="form-group">
+                  <label>How many days?</label>
+                  <input type="number" value={numDays} onChange={e => setNumDays(e.target.value)} min="1" max="14" required />
+                </div>
+              )}
+              {missingInfo.includes('pacing') && (
+                <div className="form-group">
+                  <label>Trip Pacing</label>
+                  <select value={pacing} onChange={e => setPacing(e.target.value)} required>
+                    <option value="" disabled>Select pacing...</option>
+                    <option value="relaxed">🍃 Relaxed (2-3 stops/day)</option>
+                    <option value="packed">🏃 Packed (5-6 stops/day)</option>
+                  </select>
+                </div>
+              )}
+              <button type="submit" className="modal-btn" style={{ marginTop: '16px', width: '100%', background: '#3b82f6', color: 'white', padding: '10px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Apply & Continue</button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Top Bar */}
       <header className="top-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -229,16 +366,162 @@ export default function App() {
         {/* Right Pane: Context & Results */}
         <div className="context-pane">
           <div className="tabs">
-            {['Hotels', 'Food', 'Places', 'Events'].map(tab => (
-              <button 
-                key={tab} 
-                className={`tab ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab}
-              </button>
-            ))}
+            <button className={`tab ${activeTab === 'Hotels' ? 'active' : ''}`} onClick={() => setActiveTab('Hotels')}>Hotels</button>
+            <button className={`tab ${activeTab === 'Places' ? 'active' : ''}`} onClick={() => setActiveTab('Places')}>Attractions</button>
+            <button className={`tab ${activeTab === 'Food' ? 'active' : ''}`} onClick={() => setActiveTab('Food')}>Food</button>
+            <button className={`tab ${activeTab === 'Events' ? 'active' : ''}`} onClick={() => setActiveTab('Events')}>Events</button>
+            <button className={`tab ${activeTab === 'Directions' ? 'active' : ''}`} onClick={() => setActiveTab('Directions')}>Directions</button>
+            <button className={`tab ${activeTab === 'Itinerary' ? 'active' : ''}`} onClick={() => setActiveTab('Itinerary')}>Itinerary</button>
           </div>
+
+          {activeTab === 'Directions' && latestData?.type === 'directions_recommendation' && (
+            <div>
+              <h2 className="section-title">Best Routes to {latestData.results.length > 0 ? latestData.results[0].mode : "Destination"}</h2>
+              <div className="cards-container">
+                {latestData.results.map((dir, i) => (
+                  <div 
+                    key={i} 
+                    className="hotel-card" 
+                    style={{ 
+                      borderLeft: `4px solid ${dir.route_type.includes('Fastest') ? '#10b981' : dir.route_type.includes('Cheapest') ? '#f59e0b' : '#3b82f6'}`,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setExpandedRoute(expandedRoute === i ? null : i)}
+                  >
+                    <div className="card-header" style={{ marginBottom: '8px' }}>
+                      <div className="card-title" style={{ fontSize: '1.1rem' }}>
+                        {dir.route_type}
+                        <span style={{ fontSize: '0.8rem', marginLeft: '10px', color: 'var(--primary)', fontWeight: 'normal' }}>
+                          {expandedRoute === i ? '▲ Hide Details' : '▼ View Steps'}
+                        </span>
+                      </div>
+                      <div className="card-price">
+                        <div className="price-val" style={{ color: 'var(--text-main)' }}>{dir.duration}</div>
+                      </div>
+                    </div>
+                    <div className="card-subtitle" style={{ marginBottom: '16px', color: 'var(--primary)' }}>
+                      {dir.distance} • {dir.transfers > 0 ? `${dir.transfers} transfers` : 'Direct'}
+                    </div>
+                    <p className="card-summary">{dir.summary}</p>
+                    
+                    {expandedRoute === i && dir.steps && (
+                      <div className="route-steps" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <h4 style={{ marginBottom: '12px', color: 'var(--text-main)' }}>Step-by-step:</h4>
+                        <ul style={{ listStyleType: 'none', paddingLeft: '0', margin: '0' }}>
+                          {dir.steps.map((step, idx) => (
+                            <li key={idx} style={{ marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                              {step}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+                      {dir.price ? (
+                        <div className="price-tag" style={{ fontSize: '0.85rem' }}>
+                          Est. Cost: {dir.price}
+                        </div>
+                      ) : <div></div>}
+                      
+                      {dir.link && (
+                        <a 
+                          href={dir.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="modal-btn" 
+                          style={{ textDecoration: 'none', background: '#10b981', color: 'white', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Open in Google Maps 🗺️
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'Itinerary' && itineraryData && (
+            <div className="itinerary-container">
+              <div className="itinerary-header">
+                <h2 className="section-title" style={{ marginBottom: '4px' }}>
+                  🗺️ {itineraryData.total_days}-Day {itineraryData.pacing === 'packed' ? '🏃 Packed' : '🍃 Relaxed'} Itinerary
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 16px 0' }}>
+                  {itineraryData.destination}
+                </p>
+              </div>
+
+              {/* Day tabs */}
+              <div className="day-tabs">
+                {itineraryData.days.map(day => (
+                  <button
+                    key={day.day_number}
+                    className={`day-tab ${activeDay === day.day_number ? 'active' : ''}`}
+                    onClick={() => setActiveDay(day.day_number)}
+                  >
+                    <span className="day-tab-num">Day {day.day_number}</span>
+                    <span className="day-tab-theme">{day.theme}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Timeline for active day */}
+              {itineraryData.days.filter(d => d.day_number === activeDay).map(day => (
+                <div key={day.day_number} className="timeline">
+                  {day.slots.map((slot, idx) => {
+                    const categoryColors = {
+                      attraction: '#14b8a6',
+                      restaurant: '#f59e0b',
+                      hotel: '#3b82f6',
+                      travel: '#8b5cf6',
+                      activity: '#ec4899'
+                    }
+                    const categoryIcons = {
+                      attraction: '🏛️',
+                      restaurant: '🍽️',
+                      hotel: '🏨',
+                      travel: '🚗',
+                      activity: '🎯'
+                    }
+                    const color = categoryColors[slot.category] || '#6b7280'
+                    const icon = categoryIcons[slot.category] || '📍'
+
+                    return (
+                      <div key={idx} className="timeline-item">
+                        <div className="timeline-dot" style={{ background: color }}>
+                          <span style={{ fontSize: '0.75rem' }}>{icon}</span>
+                        </div>
+                        <div className="timeline-connector" style={{ borderColor: color + '40' }}></div>
+                        <div className="timeline-card">
+                          <div className="timeline-time">
+                            <span className="time-label">{slot.time_label}</span>
+                            <span className="time-slot-badge" style={{ background: color + '20', color: color }}>
+                              {slot.time_slot}
+                            </span>
+                          </div>
+                          <h4 className="timeline-title">{slot.activity_name}</h4>
+                          <p className="timeline-desc">{slot.description}</p>
+                          <div className="timeline-meta">
+                            <span className="meta-tag">⏱️ {slot.duration_minutes} min</span>
+                            {slot.rating && <span className="meta-tag">⭐ {slot.rating}</span>}
+                            {slot.cost_estimate && <span className="meta-tag">💰 {slot.cost_estimate}</span>}
+                          </div>
+                          {slot.travel_to_next && (
+                            <div className="travel-connector">
+                              {slot.travel_to_next}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
 
           {latestData?.type === 'hotel_recommendation' && activeTab === 'Hotels' ? (
             <>

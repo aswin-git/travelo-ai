@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import json
 from ..config import settings
 from ..utils.logger import get_logger
 
@@ -74,3 +75,68 @@ async def summarize_reviews(reviews_text: str, subject_name: str) -> str:
     except Exception as e:
         logger.error(f"Gemini generation error in summarize_reviews for '{subject_name}': {e}", exc_info=True)
         return f"I couldn't summarize the reviews for {subject_name} at this time."
+
+async def synthesize_place_knowledge(place_name: str, raw_context: str) -> dict:
+    """Uses Gemini asynchronously to parse raw context into a structured JSON profile."""
+    prompt = f"""
+    You are an expert travel writer. Analyze the following raw data about '{place_name}':
+    {raw_context}
+    
+    Output a strictly formatted JSON object containing exactly these keys:
+    - "overview": 3-4 sentences of general travel vibe.
+    - "history_and_culture": Deep historical and cultural context.
+    - "best_time_to_visit": Weather and seasonal tourist details.
+    - "neighborhoods_districts": Key parts of the town to explore.
+    - "local_delicacies": Traditional local foods they must try.
+    - "things_to_do": Top activities, e.g., surfing, hiking, paragliding.
+    
+    If information for a key is missing, provide a generic reasonable fallback or say 'Information not available'.
+    """
+    try:
+        response = await model.generate_content_async(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        return json.loads(response.text.strip())
+    except Exception as e:
+        logger.error(f"Gemini generation error in synthesize_place_knowledge for '{place_name}': {e}", exc_info=True)
+        return {
+            "overview": "Information currently unavailable.",
+            "history_and_culture": "Information currently unavailable.",
+            "best_time_to_visit": "Information currently unavailable.",
+            "neighborhoods_districts": "Information currently unavailable.",
+            "local_delicacies": "Information currently unavailable.",
+            "things_to_do": "Information currently unavailable."
+        }
+
+async def discover_and_recommend(user_query: str, retrieved_places: str) -> dict:
+    """Uses Gemini to recommend places based on semantic search hits or to guess places if hits are poor."""
+    prompt = f"""
+    You are an enthusiastic travel advisor. The user is looking for this vibe/preference: "{user_query}"
+    
+    Here are the closest matches from our database:
+    {retrieved_places}
+    
+    If the matches above clearly fit the user's vibe:
+    - Recommend the best options from the database matches.
+    - Explain exactly why they fit.
+    - Set 'trigger_ingestion' to an empty list [].
+    
+    If the matches above DO NOT fit well (or are empty):
+    - Recommend 2-3 real-world travel destinations that perfectly fit the vibe.
+    - Set 'trigger_ingestion' to a list of those 2-3 destination names so we can add them to our database.
+    
+    Output strictly as JSON with keys 'response' and 'trigger_ingestion'.
+    """
+    try:
+        response = await model.generate_content_async(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        return json.loads(response.text.strip())
+    except Exception as e:
+        logger.error(f"Gemini generation error in discover_and_recommend: {e}", exc_info=True)
+        return {
+            "response": "I'm sorry, I couldn't find a perfect recommendation right now.",
+            "trigger_ingestion": []
+        }
