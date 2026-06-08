@@ -94,6 +94,7 @@ def search_restaurants(destination: str, cuisine: Optional[str] = None) -> List[
             
             total_score = rating_score + cuisine_score + pop_score
             
+            gps = loc.get("gps_coordinates") or {}
             scored_restaurants.append({
                 "name": name,
                 "rating": rating,
@@ -102,6 +103,8 @@ def search_restaurants(destination: str, cuisine: Optional[str] = None) -> List[
                 "thumbnail": loc.get("thumbnail", ""),
                 "data_id": loc.get("data_id"),
                 "price_level": loc.get("price", ""),
+                "latitude": gps.get("latitude"),
+                "longitude": gps.get("longitude"),
                 "total_score": total_score
             })
             
