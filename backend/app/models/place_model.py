@@ -119,6 +119,7 @@ class ChatRequest(BaseModel):
     travel_mode: Optional[str] = None
     num_days: Optional[int] = None
     pacing: Optional[str] = None  # "relaxed" or "packed"
+    meal_preference: Optional[str] = None  # "fixed" or "flexible"
 
 class HotelResult(BaseModel):
     name: str
@@ -179,6 +180,8 @@ class ItinerarySlot(BaseModel):
     category: str        # "attraction", "restaurant", "hotel", "travel", "activity"
     rating: Optional[float] = None
     travel_to_next: Optional[str] = None  # "🚗 15 mins drive"
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class ItineraryDay(BaseModel):
     day_number: int
@@ -189,6 +192,8 @@ class ItineraryResult(BaseModel):
     destination: str
     total_days: int
     pacing: str
+    start_location: Optional[str] = None
+    meal_preference: Optional[str] = None  # "fixed" or "flexible"
     days: List[ItineraryDay]
 
 class ChatResponse(BaseModel):

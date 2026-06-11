@@ -66,7 +66,8 @@ def search_attractions(destination: str) -> List[Dict[str, Any]]:
         locals_results = results.get("local_results", [])
         
         attractions = []
-        for loc in locals_results[:10]:  # Return top 5 attractions
+        for loc in locals_results[:10]:
+            gps = loc.get("gps_coordinates") or {}
             attractions.append({
                 "name": loc.get("title", "Unknown Attraction"),
                 "rating": loc.get("rating"),
@@ -74,6 +75,8 @@ def search_attractions(destination: str) -> List[Dict[str, Any]]:
                 "description": loc.get("description", ""),
                 "thumbnail": loc.get("thumbnail", ""),
                 "data_id": loc.get("data_id"),
+                "latitude": gps.get("latitude"),
+                "longitude": gps.get("longitude"),
             })
         
         return attractions

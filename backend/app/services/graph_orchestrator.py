@@ -100,6 +100,7 @@ class TravelState(TypedDict, total=False):
     num_days: Optional[int]
     pacing: Optional[str]
     itinerary: Optional[dict]
+    meal_preference: Optional[str]
 
     # ── Internal routing flag ───────────────────────────────────────────────
     _hotel_found: bool  # used by handle_specific_hotel → fallback logic
@@ -192,6 +193,7 @@ async def classify_intent(state: TravelState) -> dict:
 - "travel_mode": one of ["driving", "transit", "walking", "flight"] if mentioned (or null)
 - "num_days": number of days for itinerary if mentioned (or null)
 - "pacing": one of ["relaxed", "packed"] if mentioned or inferred (or null)
+- "meal_preference": one of ["fixed", "flexible"] if mentioned (or null). "fixed" means meals at standard Breakfast/Lunch/Dinner times, "flexible" means restaurants placed dynamically on the route
 {history_block}
 User message: {message}"""
 
@@ -237,6 +239,7 @@ User message: {message}"""
     travel_mode = parsed.get("travel_mode") or state.get("travel_mode")
     num_days = parsed.get("num_days") or state.get("num_days")
     pacing = parsed.get("pacing") or state.get("pacing")
+    meal_preference = parsed.get("meal_preference") or state.get("meal_preference")
 
     logger.info(
         f"Resolved Context -> Intent: {intent}, Dest: {destination}, Budget: {budget}, "
@@ -259,6 +262,8 @@ User message: {message}"""
     elif intent == "itinerary_search":
         if not num_days: missing_info.append("num_days")
         if not pacing: missing_info.append("pacing")
+        if not start_location: missing_info.append("itinerary_start_location")
+        if not meal_preference: missing_info.append("meal_preference")
 
     if missing_info:
         logger.info(f"Missing info for {intent}: {missing_info}")
@@ -273,6 +278,7 @@ User message: {message}"""
             "travel_mode": travel_mode,
             "num_days": num_days,
             "pacing": pacing,
+            "meal_preference": meal_preference,
         }
 
     return {
@@ -292,6 +298,7 @@ User message: {message}"""
         "num_days": num_days,
         "pacing": pacing,
         "missing_info": None,
+        "meal_preference": meal_preference,
     }
 
 
@@ -726,118 +733,307 @@ async def handle_directions(state: TravelState, config: RunnableConfig) -> dict:
 #  NODE: handle_itinerary
 # ═══════════════════════════════════════════════════════════════════════════
 async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
-    """Generates a structured multi-day travel itinerary using Gemini."""
+    """Generates a geo-optimized multi-day travel itinerary.
+
+    Pipeline:
+    1. Fetch attractions + restaurants via SerpAPI (or cache)
+    2. Geocode all candidates + origin via Nominatim
+    3. Order attractions using nearest-neighbor from origin
+    4. Interleave restaurants at meal slots by proximity
+    5. Split into days and send pre-ordered sequence to Gemini
+       (Gemini only writes descriptions/timing, NOT the ordering)
+    """
+    from ..services.attraction_service import search_attractions
+    from ..services.restaurant_service import search_restaurants
+    from ..services.geo_routing_service import (
+        batch_geocode,
+        geocode_place,
+        haversine_km,
+        interleave_restaurants,
+        nearest_neighbor_order,
+        resolve_destination,
+        split_into_days,
+    )
+
     db: Session = config["configurable"]["db"]
     destination = state.get("destination", "")
     num_days = state.get("num_days", 3)
     pacing = state.get("pacing", "relaxed")
     budget = state.get("budget")
     traveler_type = state.get("traveler_type")
+    start_location = state.get("start_location")
+    meal_preference = state.get("meal_preference", "fixed")
 
-    logger.info(f"Generating {num_days}-day {pacing} itinerary for {destination}")
+    logger.info(
+        f"Generating geo-optimized {num_days}-day {pacing} itinerary for {destination}"
+        f" (origin: {start_location or 'destination center'}, meals: {meal_preference})"
+    )
 
-    # ── Gather context from our existing engines ────────────────────────────
-    context_parts = []
+    # ── Phase 1: Fetch candidate places ────────────────────────────────────
+    attractions_raw = []
+    restaurants_raw = []
 
-    # RAG context
+    try:
+        attractions_raw = search_attractions(destination) or []
+        logger.info(f"Fetched {len(attractions_raw)} attractions for {destination}")
+    except Exception as e:
+        logger.warning(f"Attractions fetch failed: {e}")
+
+    try:
+        restaurants_raw = search_restaurants(destination) or []
+        logger.info(f"Fetched {len(restaurants_raw)} restaurants for {destination}")
+    except Exception as e:
+        logger.warning(f"Restaurants fetch failed: {e}")
+
+    # ── Phase 2: Geocode everything ────────────────────────────────────────
+    # Resolve the destination ONCE — this gives us lat/lon for the Tier-3
+    # viewbox fallback used inside batch_geocode and geocode_place.
+    dest_anchor = resolve_destination(destination)
+    dest_lat = dest_anchor["latitude"] if dest_anchor else None
+    dest_lon = dest_anchor["longitude"] if dest_anchor else None
+
+    logger.info("Geocoding attractions...")
+    geocoded_attractions = batch_geocode(
+        attractions_raw[:10], destination, dest_lat=dest_lat, dest_lon=dest_lon
+    )
+
+    logger.info("Geocoding restaurants...")
+    geocoded_restaurants = batch_geocode(
+        restaurants_raw[:8], destination, dest_lat=dest_lat, dest_lon=dest_lon
+    )
+
+    # Geocode the origin (user's starting location or destination center)
+    # Handle the __skip__ sentinel from the frontend's Skip button
+    if start_location == "__skip__":
+        start_location = None
+    origin_coords = None
+    if start_location:
+        origin_result = geocode_place(start_location, dest_lat=dest_lat, dest_lon=dest_lon)
+        if origin_result:
+            origin_coords = (origin_result["latitude"], origin_result["longitude"])
+            logger.info(f"Origin '{start_location}' → ({origin_coords[0]:.4f}, {origin_coords[1]:.4f})")
+
+    if not origin_coords:
+        # Fallback: use the destination anchor we already resolved
+        if dest_lat and dest_lon:
+            origin_coords = (dest_lat, dest_lon)
+            logger.info(f"Using resolved destination center as origin → ({dest_lat:.4f}, {dest_lon:.4f})")
+        elif geocoded_attractions:
+            # Last resort: use the first attraction's coordinates
+            origin_coords = (geocoded_attractions[0]["latitude"], geocoded_attractions[0]["longitude"])
+
+    # ── Phase 3: Nearest-neighbor ordering ─────────────────────────────────
+    if origin_coords and geocoded_attractions:
+        logger.info("Running nearest-neighbor ordering from origin...")
+        ordered_attractions = nearest_neighbor_order(
+            geocoded_attractions, origin_coords[0], origin_coords[1]
+        )
+    else:
+        ordered_attractions = geocoded_attractions
+
+    # ── Phase 4: Interleave restaurants ────────────────────────────────────
+    slots_per_day = 3 if pacing == "relaxed" else 5
+    if ordered_attractions and geocoded_restaurants:
+        logger.info(f"Interleaving restaurants (mode: {meal_preference})...")
+        interleaved = interleave_restaurants(
+            ordered_attractions,
+            geocoded_restaurants,
+            slots_per_day=slots_per_day,
+            meal_preference=meal_preference,
+        )
+    else:
+        # No restaurants geocoded — just tag attractions
+        interleaved = [{**a, "category": "attraction"} for a in ordered_attractions]
+
+    # ── Phase 5: Split into days ───────────────────────────────────────────
+    days_split = split_into_days(interleaved, num_days)
+
+    # ── Phase 6: Build pre-ordered context for Gemini ──────────────────────
+    # Gemini's job is now ONLY to add descriptions, timing, and cost — NOT to reorder
+    day_blocks = []
+    for day_idx, day_stops in enumerate(days_split, 1):
+        stop_lines = []
+        for stop_idx, stop in enumerate(day_stops, 1):
+            cat = stop.get("category", "attraction")
+            meal_type = stop.get("meal_type", "")
+            name = stop.get("name", "Unknown")
+            rating = stop.get("rating", "N/A")
+            desc = stop.get("description", "")[:100]
+            lat = stop.get("latitude", 0)
+            lon = stop.get("longitude", 0)
+
+            if cat == "restaurant":
+                stop_lines.append(
+                    f"  {stop_idx}. [RESTAURANT — {meal_type}] {name} "
+                    f"(Rating: {rating}) at ({lat:.4f}, {lon:.4f}): {desc}"
+                )
+            else:
+                stop_lines.append(
+                    f"  {stop_idx}. [ATTRACTION] {name} "
+                    f"(Rating: {rating}) at ({lat:.4f}, {lon:.4f}): {desc}"
+                )
+
+        day_blocks.append(f"Day {day_idx}:\n" + "\n".join(stop_lines))
+
+    pre_ordered_context = "\n\n".join(day_blocks)
+
+    # Also gather RAG context for richer descriptions
+    rag_context = ""
     try:
         rag_result = await process_chat_query(db, f"Tell me about {destination}", destination)
         if rag_result.get("response"):
-            context_parts.append(f"About {destination}:\n{rag_result['response'][:1500]}")
+            rag_context = f"\n\nAbout {destination}:\n{rag_result['response'][:1000]}"
     except Exception as e:
         logger.warning(f"RAG context fetch failed: {e}")
 
-    # Cached attractions
-    from ..services.attraction_service import search_attractions
-    try:
-        attractions = search_attractions(destination)
-        if attractions:
-            top_attrs = [f"- {a['name']} (Rating: {a.get('rating', 'N/A')}): {a.get('description', '')[:100]}" for a in attractions[:8]]
-            context_parts.append(f"Top Attractions in {destination}:\n" + "\n".join(top_attrs))
-    except Exception as e:
-        logger.warning(f"Attractions context fetch failed: {e}")
-
-    # Cached restaurants
-    from ..services.restaurant_service import search_restaurants
-    try:
-        restaurants = search_restaurants(destination)
-        if restaurants:
-            top_rests = [f"- {r['name']} (Rating: {r.get('rating', 'N/A')}, Price: {r.get('price_level', 'N/A')}): {r.get('description', '')[:80]}" for r in restaurants[:6]]
-            context_parts.append(f"Top Restaurants in {destination}:\n" + "\n".join(top_rests))
-    except Exception as e:
-        logger.warning(f"Restaurants context fetch failed: {e}")
-
-    context_block = "\n\n".join(context_parts) if context_parts else f"General knowledge about {destination}."
-
-    # ── Build the structured generation prompt ──────────────────────────────
-    stops_per_day = "2-3 activities plus meals" if pacing == "relaxed" else "4-6 activities plus meals"
+    # ── Build the Gemini prompt ────────────────────────────────────────────
     budget_hint = f"The traveler has a budget of ₹{budget}." if budget else ""
     traveler_hint = f"The traveler type is: {traveler_type}." if traveler_type else ""
+    origin_hint = f"The traveler is starting from {start_location}." if start_location else ""
 
-    itinerary_prompt = f"""You are a world-class travel planner. Generate a detailed {num_days}-day travel itinerary for {destination}.
-
-Pacing: {pacing} ({stops_per_day} per day).
+    itinerary_prompt = f"""You are an expert travel planner building a detailed, realistic {num_days}-day itinerary for {destination}.
+{origin_hint}
 {budget_hint}
 {traveler_hint}
 
-USE THE FOLLOWING REAL DATA about {destination} to fill in real place names, real restaurants, and real attractions.
-Do NOT invent fictional places — use the ones listed below whenever possible:
+I have pre-ordered the attractions and restaurants below by geographic proximity using nearest-neighbor routing. DO NOT reorder them.
 
-{context_block}
+Your job is ONLY to:
+1. Slot each pre-ordered stop into a proper daily schedule with realistic time labels
+2. Fill in ALL THREE meals (Breakfast, Lunch, Dinner) for every day — use the [RESTAURANT] stops from the route for one meal slot, and invent a realistic local restaurant name for the remaining meals
+3. Add a hotel/accommodation recommendation at the END of each day (category: "hotel")
+4. Write vivid 1-2 sentence descriptions
+5. Estimate realistic duration_minutes for each stop
+6. Add travel_to_next times between consecutive stops
+
+SCHEDULING RULES (strictly enforced):
+- Day start: 08:00 AM with Breakfast (30-45 min)
+- Morning attractions: 09:00 AM – 12:30 PM (each attraction 90-120 min)
+- Lunch: 12:30 PM – 01:30 PM (at a nearby restaurant, 60 min)
+- Afternoon attractions: 02:00 PM – 05:30 PM (each attraction 90-120 min)
+- Evening/Dinner: 07:00 PM – 08:30 PM (90 min)
+- Hotel check-in: 09:00 PM (category: "hotel", duration_minutes: 0)
+- Activities must run BACK-TO-BACK with only travel gaps — do NOT leave hours between them
+
+PRE-ORDERED ROUTE:
+
+{pre_ordered_context}
+{rag_context}
 
 Return a JSON object with this EXACT structure:
 {{
   "destination": "{destination}",
   "total_days": {num_days},
   "pacing": "{pacing}",
+  "start_location": {json.dumps(start_location)},
+  "meal_preference": "{meal_preference}",
   "days": [
     {{
       "day_number": 1,
-      "theme": "A short catchy theme for the day, e.g. 'Coastal Explorations'",
+      "theme": "A short catchy theme for the day",
       "slots": [
+        {{
+          "time_slot": "Breakfast",
+          "time_label": "08:00 AM",
+          "activity_name": "Name of breakfast restaurant",
+          "description": "A vivid 1-2 sentence description",
+          "duration_minutes": 45,
+          "cost_estimate": "₹200",
+          "category": "restaurant",
+          "meal_type": "Breakfast",
+          "rating": null,
+          "travel_to_next": "🚶 5 mins walk",
+          "latitude": null,
+          "longitude": null
+        }},
         {{
           "time_slot": "Morning",
           "time_label": "09:00 AM",
-          "activity_name": "Name of the place or activity",
-          "description": "A 1-2 sentence vivid description of what to do there",
+          "activity_name": "EXACT attraction name from route",
+          "description": "A vivid 1-2 sentence description",
           "duration_minutes": 120,
-          "cost_estimate": "₹500" or null,
+          "cost_estimate": "₹500",
           "category": "attraction",
-          "rating": 4.5 or null,
-          "travel_to_next": "🚗 20 mins drive" or null
+          "meal_type": null,
+          "rating": 4.5,
+          "travel_to_next": "🚗 15 mins drive",
+          "latitude": 10.0870,
+          "longitude": 77.0601
         }},
-        ...more slots for Lunch, Afternoon, Evening, Dinner...
+        {{
+          "time_slot": "Lunch",
+          "time_label": "12:30 PM",
+          "activity_name": "Name of lunch restaurant",
+          "description": "Description",
+          "duration_minutes": 60,
+          "cost_estimate": "₹400",
+          "category": "restaurant",
+          "meal_type": "Lunch",
+          "rating": null,
+          "travel_to_next": "🚗 10 mins drive",
+          "latitude": null,
+          "longitude": null
+        }},
+        {{
+          "time_slot": "Dinner",
+          "time_label": "07:00 PM",
+          "activity_name": "Name of dinner restaurant",
+          "description": "Description",
+          "duration_minutes": 90,
+          "cost_estimate": "₹600",
+          "category": "restaurant",
+          "meal_type": "Dinner",
+          "rating": null,
+          "travel_to_next": "🚶 5 mins walk",
+          "latitude": null,
+          "longitude": null
+        }},
+        {{
+          "time_slot": "Night",
+          "time_label": "09:00 PM",
+          "activity_name": "Name of hotel or resort in {destination}",
+          "description": "Settle in for the night at this comfortable property.",
+          "duration_minutes": 0,
+          "cost_estimate": "₹3000",
+          "category": "hotel",
+          "meal_type": null,
+          "rating": null,
+          "travel_to_next": null,
+          "latitude": null,
+          "longitude": null
+        }}
       ]
-    }},
-    ...more days...
+    }}
   ]
 }}
 
-Rules:
-- category must be one of: "attraction", "restaurant", "hotel", "travel", "activity"
-- time_slot must be one of: "Morning", "Lunch", "Afternoon", "Evening", "Dinner", "Night"
-- Include breakfast/lunch/dinner slots with category "restaurant" using real restaurant names from the data
-- Include travel_to_next between stops with estimated drive/walk time
-- Make the day themes creative and evocative
-- Ensure logical geographic flow (don't zigzag across the city)
-- Return ONLY valid JSON, no markdown formatting"""
+CRITICAL RULES:
+- Every day MUST have exactly: Breakfast + at least 2 attractions + Lunch + at least 1 afternoon attraction + Dinner + Hotel
+- Use [ATTRACTION] names EXACTLY as given in the pre-ordered route
+- Use [RESTAURANT] stops from the route for ONE of Breakfast/Lunch/Dinner — use their provided lat/lon
+- Invent realistic local restaurant names for the other two meal slots (set latitude/longitude to null)
+- Hotel entry is REQUIRED at the end of every day — suggest a real well-known hotel/resort in {destination}
+- time_slot must be one of: "Breakfast", "Morning", "Lunch", "Afternoon", "Evening", "Dinner", "Night"
+- category must be one of: "attraction", "restaurant", "hotel"
+- Return ONLY valid JSON, no markdown"""
 
     try:
         response = model.generate_content(
             itinerary_prompt,
             generation_config={"response_mime_type": "application/json"},
         )
-        # Use raw_decode to handle cases where Gemini appends extra data after the JSON
         text = response.text.strip()
         decoder = json.JSONDecoder()
         raw, _ = decoder.raw_decode(text)
 
         # Validate with Pydantic
         itinerary = ItineraryResult(**raw)
-        logger.info(f"Successfully generated {itinerary.total_days}-day itinerary for {destination}")
+        logger.info(f"Successfully generated {itinerary.total_days}-day geo-optimized itinerary for {destination}")
 
         return {
-            "response_text": f"Here's your {num_days}-day {pacing} itinerary for {destination}! 🗺️✨",
+            "response_text": f"Here's your {num_days}-day {pacing} itinerary for {destination}! 🗺️✨ "
+                             f"{'Starting from ' + start_location + '. ' if start_location else ''}"
+                             f"All stops are optimized for minimal travel time between locations.",
             "source": "gemini_itinerary",
             "itinerary": itinerary.model_dump(),
         }
@@ -996,6 +1192,7 @@ async def run_travel_graph(request: Any, db: Session) -> dict:
         "travel_mode": request.travel_mode,
         "num_days": request.num_days,
         "pacing": request.pacing,
+        "meal_preference": request.meal_preference,
     }
 
     logger.info(f"Running travel graph with thread_id={thread_id}")

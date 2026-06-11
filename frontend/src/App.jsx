@@ -27,6 +27,7 @@ export default function App() {
   const [pacing, setPacing] = useState('')
   const [activeDay, setActiveDay] = useState(1)
   const [itineraryData, setItineraryData] = useState(null)
+  const [mealPreference, setMealPreference] = useState('')
 
   const chatEndRef = useRef(null)
 
@@ -52,7 +53,8 @@ export default function App() {
         end_location: endLocation || null,
         travel_mode: travelMode || null,
         num_days: numDays ? Number(numDays) : null,
-        pacing: pacing || null
+        pacing: pacing || null,
+        meal_preference: mealPreference || null
       }
       
       const res = await fetch('http://127.0.0.1:8000/chat', {
@@ -262,6 +264,50 @@ export default function App() {
                     <option value="" disabled>Select pacing...</option>
                     <option value="relaxed">🍃 Relaxed (2-3 stops/day)</option>
                     <option value="packed">🏃 Packed (5-6 stops/day)</option>
+                  </select>
+                </div>
+              )}
+              {missingInfo.includes('itinerary_start_location') && (
+                <div className="form-group">
+                  <label>Where are you starting from?</label>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 8px' }}>This helps us plan your Day 1 starting from the nearest attractions.</p>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text" 
+                      value={startLocation} 
+                      onChange={e => setStartLocation(e.target.value)} 
+                      placeholder="e.g. Kochi, Coimbatore" 
+                      style={{ flex: 1 }}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setStartLocation('__skip__')
+                      }}
+                      style={{ 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid rgba(255,255,255,0.15)', 
+                        color: 'var(--text-secondary)', 
+                        padding: '8px 14px', 
+                        borderRadius: '8px', 
+                        cursor: 'pointer', 
+                        fontSize: '0.85rem',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Skip ⏭️
+                    </button>
+                  </div>
+                </div>
+              )}
+              {missingInfo.includes('meal_preference') && (
+                <div className="form-group">
+                  <label>Meal Scheduling</label>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 8px' }}>How should restaurants be placed in your itinerary?</p>
+                  <select value={mealPreference} onChange={e => setMealPreference(e.target.value)} required>
+                    <option value="" disabled>Select preference...</option>
+                    <option value="fixed">🕐 Fixed Times (Breakfast → Lunch → Dinner)</option>
+                    <option value="flexible">📍 Flexible (restaurants placed on the route)</option>
                   </select>
                 </div>
               )}
