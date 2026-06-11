@@ -43,15 +43,33 @@ async def chat_with_context(query: str, context: str, history: list = None) -> s
         )
         history_block = f"\n    Previous conversation:\n    {formatted}\n"
 
-    prompt = f"""
-    You are an AI travel assistant. Answer the user's query about a tourist place based on the provided context.
-    Keep your response concise, engaging, and directly answering the user. If the context doesn't have the answer, just give a general helpful summary based on the context.
-    Use the conversation history (if any) to understand references like "there", "that place", etc.
-    {history_block}
-    Context: {context}
-    
-    User Query: {query}
-    """
+    prompt = f"""You are an expert AI travel assistant. Answer the user's query about a tourist place based on the provided context.
+
+FORMATTING RULES (strictly follow these):
+- Structure your response with clear markdown sections using ## headers
+- Use bullet points (- ) for lists of items
+- Use **bold** for important names, places, and key facts
+- Use emojis to make headers engaging (e.g. 🌍 Overview, 🌤️ Weather, 🍽️ Food, 🏛️ Must Visit)
+- NEVER dump information as a single paragraph
+- Organize information into logical sections based on what's available in the context
+
+SECTION GUIDELINES (include relevant ones based on context):
+- **🌍 Overview** — A vivid 2-3 sentence introduction capturing the essence of the place
+- **✨ Highlights** — Top 3-5 things that make this place special (as bullet points)
+- **🌤️ Current Weather** — If weather data is in the context, show it clearly with temperature and conditions
+- **🏛️ Must-Visit Spots** — Key attractions or neighborhoods to explore
+- **🍽️ Local Cuisine** — Must-try foods and dining experiences
+- **📅 Best Time to Visit** — Seasonal recommendations
+- **💡 Travel Tips** — Practical tips for visitors
+- **🏰 History & Culture** — Cultural significance and heritage
+
+Only include sections for which you have actual information from the context. Don't fabricate sections with no data.
+Keep each section focused and informative — not too verbose, but detailed enough to be genuinely useful.
+Use the conversation history (if any) to understand references like "there", "that place", etc.
+{history_block}
+Context: {context}
+
+User Query: {query}"""
     try:
         response = await model.generate_content_async(prompt)
         return response.text.strip()
@@ -78,19 +96,23 @@ async def summarize_reviews(reviews_text: str, subject_name: str) -> str:
 
 async def synthesize_place_knowledge(place_name: str, raw_context: str) -> dict:
     """Uses Gemini asynchronously to parse raw context into a structured JSON profile."""
-    prompt = f"""
-    You are an expert travel writer. Analyze the following raw data about '{place_name}':
+    prompt = f"""You are an expert travel writer. Analyze the following raw data about '{place_name}':
     {raw_context}
     
     Output a strictly formatted JSON object containing exactly these keys:
-    - "overview": 3-4 sentences of general travel vibe.
-    - "history_and_culture": Deep historical and cultural context.
-    - "best_time_to_visit": Weather and seasonal tourist details.
-    - "neighborhoods_districts": Key parts of the town to explore.
-    - "local_delicacies": Traditional local foods they must try.
-    - "things_to_do": Top activities, e.g., surfing, hiking, paragliding.
+    - "overview": A vivid 4-5 sentence travel overview covering geography, vibe, and what makes this place unique.
+    - "history_and_culture": Rich historical and cultural context — major events, traditions, cultural identity, and significance (3-4 sentences minimum).
+    - "best_time_to_visit": Detailed seasonal breakdown — weather patterns, peak vs off-peak, festivals by month, and what to expect in each season.
+    - "neighborhoods_districts": Key areas/neighborhoods to explore with brief descriptions of each (mention at least 3-4 if it's a city).
+    - "local_delicacies": Traditional local foods they must try — name specific dishes, drinks, street food, and where to find them.
+    - "things_to_do": Top 5-8 activities with brief descriptions (e.g., surfing, hiking, temple visits, boat rides, market walks).
+    - "getting_around": Local transportation options — how to get there and move within the place (buses, trains, tuk-tuks, ferries, etc.).
+    - "accommodation_tips": Types of stays available — budget hostels to luxury resorts, popular areas to stay.
+    - "hidden_gems": 2-3 off-the-beaten-path experiences or lesser-known spots that most tourists miss.
+    - "safety_tips": Practical safety advice, common scams to avoid, and general travel precautions.
     
-    If information for a key is missing, provide a generic reasonable fallback or say 'Information not available'.
+    Each value should be a detailed, informative paragraph (not a list). Write as if you're crafting a premium travel guide.
+    If information for a key is missing from the raw data, provide a reasonable, helpful fallback based on general knowledge — NEVER say 'Information not available'.
     """
     try:
         response = await model.generate_content_async(
@@ -106,7 +128,11 @@ async def synthesize_place_knowledge(place_name: str, raw_context: str) -> dict:
             "best_time_to_visit": "Information currently unavailable.",
             "neighborhoods_districts": "Information currently unavailable.",
             "local_delicacies": "Information currently unavailable.",
-            "things_to_do": "Information currently unavailable."
+            "things_to_do": "Information currently unavailable.",
+            "getting_around": "Information currently unavailable.",
+            "accommodation_tips": "Information currently unavailable.",
+            "hidden_gems": "Information currently unavailable.",
+            "safety_tips": "Information currently unavailable.",
         }
 
 async def discover_and_recommend(user_query: str, retrieved_places: str) -> dict:

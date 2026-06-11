@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './index.css'
 
 export default function App() {
@@ -338,7 +340,13 @@ export default function App() {
           <div className="chat-history">
             {chatHistory.map((msg, idx) => (
               <div key={idx} className={`message ${msg.role}`}>
-                {msg.content}
+                {msg.role === 'ai' ? (
+                  <div className="markdown-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.content
+                )}
                 {msg.role === 'ai' && msg.show_review_prompt && (
                   <div style={{ marginTop: '12px' }}>
                     <button 
