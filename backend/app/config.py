@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     SERPAPI_KEY: str = ""
     SERPAPI_MAPS_KEY: str = ""
     CHROMA_PERSIST_DIR: str = "./chroma_data"
+    SUPABASE_JWT_SECRET: str = ""
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
     
     class Config:
         env_file = ".env"
