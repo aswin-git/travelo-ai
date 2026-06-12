@@ -1,14 +1,18 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './index.css'
+import { useAuth } from './contexts/AuthContext'
+import LoginPage from './components/LoginPage'
+import Sidebar from './components/Sidebar'
 
 export default function App() {
+  const { user, session, loading: authLoading } = useAuth()
   const [chatHistory, setChatHistory] = useState([
     { role: 'ai', content: 'Hi there! I\'m Travelo AI. How can I help you plan your next trip?' }
   ])
   const [message, setMessage] = useState('')
-  const [sessionId] = useState(() => crypto.randomUUID())  // Stable per browser tab
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID())
   const [budget, setBudget] = useState('')
   const [loading, setLoading] = useState(false)
   const [latestData, setLatestData] = useState(null)
@@ -30,12 +34,120 @@ export default function App() {
   const [activeDay, setActiveDay] = useState(1)
   const [itineraryData, setItineraryData] = useState(null)
   const [mealPreference, setMealPreference] = useState('')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [saveStatus, setSaveStatus] = useState(null)
 
   const chatEndRef = useRef(null)
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatHistory, loading])
+
+  // Reset state when user changes (login/logout) to prevent data bleeding
+  useEffect(() => {
+    if (user) {
+      setSessionId(crypto.randomUUID())
+      setChatHistory([{ role: 'ai', content: 'Hi there! I\'m Travelo AI. How can I help you plan your next trip?' }])
+      setDestination('Explore')
+      setLatestData(null)
+      setItineraryData(null)
+    }
+  }, [user])
+
+  const accessToken = session?.access_token
+  const API = 'http://127.0.0.1:8000'
+
+  const authHeaders = useCallback(() => {
+    const h = { 'Content-Type': 'application/json' }
+    if (accessToken) h['Authorization'] = `Bearer ${accessToken}`
+    return h
+  }, [accessToken])
+
+  // Auto-save chat after each message exchange
+  const saveChatSession = useCallback(async (messages, dest) => {
+    if (!accessToken) return
+    try {
+      const firstUserMsg = messages.find(m => m.role === 'user')
+      const title = firstUserMsg ? firstUserMsg.content.slice(0, 50) : 'New Chat'
+      await fetch(`${API}/user/chat-sessions`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          session_id: sessionId,
+          title,
+          messages,
+          destination: dest || destination,
+        }),
+      })
+      window.__refreshSidebarSessions?.()
+    } catch (err) {
+      console.error('Failed to save chat session:', err)
+    }
+  }, [accessToken, sessionId, destination, authHeaders])
+
+  const handleNewChat = () => {
+    setSessionId(crypto.randomUUID())
+    setChatHistory([{ role: 'ai', content: 'Hi there! I\'m Travelo AI. How can I help you plan your next trip?' }])
+    setLatestData(null)
+    setItineraryData(null)
+    setDestination('Explore')
+    setActiveTab('Hotels')
+  }
+
+  const handleLoadSession = async (sid) => {
+    if (!accessToken) return
+    try {
+      const res = await fetch(`${API}/user/chat-sessions/${sid}`, { headers: authHeaders() })
+      if (!res.ok) return
+      const data = await res.json()
+      setSessionId(data.session_id)
+      setChatHistory(data.messages || [])
+      setDestination(data.destination || 'Explore')
+      setLatestData(null)
+      setItineraryData(null)
+    } catch (err) {
+      console.error('Failed to load session:', err)
+    }
+  }
+
+  const handleLoadItinerary = async (id) => {
+    if (!accessToken) return
+    try {
+      const res = await fetch(`${API}/user/itineraries/${id}`, { headers: authHeaders() })
+      if (!res.ok) return
+      const data = await res.json()
+      setItineraryData(data.itinerary_data)
+      setDestination(data.destination || 'Explore')
+      setActiveDay(1)
+      setActiveTab('Itinerary')
+    } catch (err) {
+      console.error('Failed to load itinerary:', err)
+    }
+  }
+
+  const handleSaveItinerary = async () => {
+    if (!accessToken || !itineraryData) return
+    setSaveStatus('saving')
+    try {
+      await fetch(`${API}/user/itineraries`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          title: `${itineraryData.total_days}-Day ${itineraryData.destination} Trip`,
+          destination: itineraryData.destination,
+          itinerary_data: itineraryData,
+          total_days: itineraryData.total_days,
+          pacing: itineraryData.pacing,
+        }),
+      })
+      setSaveStatus('saved')
+      window.__refreshSidebarItineraries?.()
+      setTimeout(() => setSaveStatus(null), 2000)
+    } catch (err) {
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus(null), 2000)
+    }
+  }
 
   async function sendDirectMessage(text) {
     const userMsg = { role: 'user', content: text }
@@ -59,9 +171,9 @@ export default function App() {
         meal_preference: mealPreference || null
       }
       
-      const res = await fetch('http://127.0.0.1:8000/chat', {
+      const res = await fetch(`${API}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(payload)
       })
       const data = await res.json()
@@ -100,7 +212,10 @@ export default function App() {
         setDestination(data.place_info.name)
       }
 
-      setChatHistory(prev => [...prev, { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt, show_attractions_prompt: data.show_attractions_prompt, show_restaurants_prompt: data.show_restaurants_prompt, show_events_prompt: data.show_events_prompt }])
+      const aiMsg = { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt, show_attractions_prompt: data.show_attractions_prompt, show_restaurants_prompt: data.show_restaurants_prompt, show_events_prompt: data.show_events_prompt }
+      const newHistory = [...chatHistory, userMsg, aiMsg]
+      setChatHistory(newHistory)
+      saveChatSession(newHistory, data.place_info?.name || destination)
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I failed to connect to the backend.' }])
     } finally {
@@ -124,13 +239,18 @@ export default function App() {
 
   const handleReviewRequest = async (placeName) => {
     setLoading(true)
-    setChatHistory(prev => [...prev, { role: 'user', content: `What do real users say about ${placeName}?` }])
+    const userMsg = { role: 'user', content: `What do real users say about ${placeName}?` }
+    setChatHistory(prev => [...prev, userMsg])
     try {
-      const res = await fetch(`http://127.0.0.1:8000/chat/summarize-place?place_name=${encodeURIComponent(placeName)}`, {
-        method: 'POST'
+      const res = await fetch(`${API}/chat/summarize-place?place_name=${encodeURIComponent(placeName)}`, {
+        method: 'POST',
+        headers: authHeaders()
       })
       const data = await res.json()
-      setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
+      const aiMsg = { role: 'ai', content: data.response }
+      const newHistory = [...chatHistory, userMsg, aiMsg]
+      setChatHistory(newHistory)
+      saveChatSession(newHistory, destination)
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews.' }])
     } finally {
@@ -140,13 +260,18 @@ export default function App() {
 
   const handleHotelReviewRequest = async (hotelName, propertyToken) => {
     setLoading(true)
-    setChatHistory(prev => [...prev, { role: 'user', content: `Summarize reviews for ${hotelName}` }])
+    const userMsg = { role: 'user', content: `Summarize reviews for ${hotelName}` }
+    setChatHistory(prev => [...prev, userMsg])
     try {
-      const res = await fetch(`http://127.0.0.1:8000/chat/summarize-hotel?hotel_name=${encodeURIComponent(hotelName)}&property_token=${propertyToken}`, {
-        method: 'POST'
+      const res = await fetch(`${API}/chat/summarize-hotel?hotel_name=${encodeURIComponent(hotelName)}&property_token=${propertyToken}`, {
+        method: 'POST',
+        headers: authHeaders()
       })
       const data = await res.json()
-      setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
+      const aiMsg = { role: 'ai', content: data.response }
+      const newHistory = [...chatHistory, userMsg, aiMsg]
+      setChatHistory(newHistory)
+      saveChatSession(newHistory, destination)
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this hotel.' }])
     } finally {
@@ -156,13 +281,18 @@ export default function App() {
 
   const handleAttractionReviewRequest = async (attractionName, dataId) => {
     setLoading(true)
-    setChatHistory(prev => [...prev, { role: 'user', content: `Summarize reviews for ${attractionName}` }])
+    const userMsg = { role: 'user', content: `Summarize reviews for ${attractionName}` }
+    setChatHistory(prev => [...prev, userMsg])
     try {
-      const res = await fetch(`http://127.0.0.1:8000/chat/summarize-attraction?attraction_name=${encodeURIComponent(attractionName)}&data_id=${encodeURIComponent(dataId)}`, {
-        method: 'POST'
+      const res = await fetch(`${API}/chat/summarize-attraction?attraction_name=${encodeURIComponent(attractionName)}&data_id=${encodeURIComponent(dataId)}`, {
+        method: 'POST',
+        headers: authHeaders()
       })
       const data = await res.json()
-      setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
+      const aiMsg = { role: 'ai', content: data.response }
+      const newHistory = [...chatHistory, userMsg, aiMsg]
+      setChatHistory(newHistory)
+      saveChatSession(newHistory, destination)
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this attraction.' }])
     } finally {
@@ -172,13 +302,18 @@ export default function App() {
 
   const handleRestaurantReviewRequest = async (restaurantName, dataId) => {
     setLoading(true)
-    setChatHistory(prev => [...prev, { role: 'user', content: `Summarize reviews for ${restaurantName}` }])
+    const userMsg = { role: 'user', content: `Summarize reviews for ${restaurantName}` }
+    setChatHistory(prev => [...prev, userMsg])
     try {
-      const res = await fetch(`http://127.0.0.1:8000/chat/summarize-restaurant?restaurant_name=${encodeURIComponent(restaurantName)}&data_id=${encodeURIComponent(dataId)}`, {
-        method: 'POST'
+      const res = await fetch(`${API}/chat/summarize-restaurant?restaurant_name=${encodeURIComponent(restaurantName)}&data_id=${encodeURIComponent(dataId)}`, {
+        method: 'POST',
+        headers: authHeaders()
       })
       const data = await res.json()
-      setChatHistory(prev => [...prev, { role: 'ai', content: data.response }])
+      const aiMsg = { role: 'ai', content: data.response }
+      const newHistory = [...chatHistory, userMsg, aiMsg]
+      setChatHistory(newHistory)
+      saveChatSession(newHistory, destination)
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this restaurant.' }])
     } finally {
@@ -186,8 +321,30 @@ export default function App() {
     }
   }
 
+  if (authLoading) {
+    return (
+      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Loading...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <LoginPage />
+  }
+
   return (
     <div className="app-container">
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onNewChat={handleNewChat}
+        onLoadSession={handleLoadSession}
+        onLoadItinerary={handleLoadItinerary}
+        currentSessionId={sessionId}
+        accessToken={accessToken}
+      />
+      <div className="main-wrapper">
       {missingInfo && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -506,6 +663,13 @@ export default function App() {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 16px 0' }}>
                   {itineraryData.destination}
                 </p>
+                <button
+                  className="save-itinerary-btn"
+                  onClick={handleSaveItinerary}
+                  disabled={saveStatus === 'saving'}
+                >
+                  {saveStatus === 'saving' ? '⏳ Saving...' : saveStatus === 'saved' ? '✅ Saved!' : saveStatus === 'error' ? '❌ Failed' : '💾 Save Itinerary'}
+                </button>
               </div>
 
               {/* Day tabs */}
@@ -766,6 +930,7 @@ export default function App() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

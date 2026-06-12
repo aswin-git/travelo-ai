@@ -5,6 +5,11 @@ __pycache__/
 
 # Node
 frontend/node_modules/
+nextjs-frontend/
+
+
+# Agent files
+.agents/
 
 # Environment variables
 backend/.env

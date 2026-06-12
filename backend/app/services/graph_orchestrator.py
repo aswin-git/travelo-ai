@@ -170,6 +170,7 @@ async def classify_intent(state: TravelState) -> dict:
 
     intent_prompt = f"""Analyze the user's travel-related message and return a JSON object with these fields:
 - "intent": one of:
+    - "general_chat" (greetings like hi/hello/hey, small talk, thank you, goodbye, how are you, or any casual non-travel-specific conversation)
     - "hotel_search" (user asking for general hotels/accommodation in a city)
     - "specific_hotel_info" (user asking about a specific hotel by name)
     - "nearby_attractions" (user asking to see nearby places, top sights, or attractions for a city)
@@ -221,7 +222,7 @@ User message: {message}"""
         f"Hotel: {hotel_name}, Place Type: {place_type}, Full parsed: {parsed}"
     )
 
-    if intent not in ["destination_discovery", "directions_search"] and not destination and not hotel_name:
+    if intent not in ["general_chat", "destination_discovery", "directions_search"] and not destination and not hotel_name:
         logger.warning("No destination or hotel detected in user message")
         return {
             "error": "I'm a travel assistant. Please ask me about a specific destination or hotel!",
@@ -703,6 +704,45 @@ async def handle_destination_discovery(state: TravelState, config: RunnableConfi
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+#  NODE: handle_general_chat
+# ═══════════════════════════════════════════════════════════════════════════
+async def handle_general_chat(state: TravelState) -> dict:
+    """Handles greetings, small talk, thank-yous, and other non-travel queries
+    with a friendly, travel-assistant persona response."""
+    message = state["message"]
+    history = state.get("conversation_history") or []
+    history_text = _format_history(history[:-1]) if len(history) > 1 else ""
+
+    history_block = f"Previous conversation:\n{history_text}\n" if history_text else ""
+
+    chat_prompt = f"""You are Travelo AI, a friendly and enthusiastic travel assistant.
+Respond naturally to the user's message in a warm, conversational tone.
+Keep your response concise (1-3 sentences).
+If they greet you, greet them back and let them know you can help with:
+- Exploring destinations and places
+- Finding hotels, restaurants, and attractions
+- Planning travel itineraries
+- Getting directions between places
+
+Do NOT make up travel information. Just be friendly and helpful.
+
+{history_block}User message: {message}"""
+
+    try:
+        response = model.generate_content(chat_prompt)
+        return {
+            "response_text": response.text.strip(),
+            "source": "general_chat",
+        }
+    except Exception as e:
+        logger.error(f"General chat response failed: {e}", exc_info=True)
+        return {
+            "response_text": "Hey there! 👋 I'm your travel assistant. Ask me about any destination, hotel, or trip you're planning!",
+            "source": "general_chat",
+        }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 #  NODE: handle_directions
 # ═══════════════════════════════════════════════════════════════════════════
 async def handle_directions(state: TravelState, config: RunnableConfig) -> dict:
@@ -1072,6 +1112,7 @@ def route_by_intent(state: TravelState) -> str:
     intent = state.get("intent", "place_info")
 
     route_map = {
+        "general_chat": "handle_general_chat",
         "specific_hotel_info": "handle_specific_hotel",
         "hotel_search": "handle_hotel_search",
         "nearby_attractions": "handle_attractions",
@@ -1111,6 +1152,7 @@ def _build_travel_graph():
     graph.add_node("handle_destination_discovery", handle_destination_discovery)
     graph.add_node("handle_directions", handle_directions)
     graph.add_node("handle_itinerary", handle_itinerary)
+    graph.add_node("handle_general_chat", handle_general_chat)
     graph.add_node("save_response", save_response)
 
     # Entry: START → manage_history → classify_intent
@@ -1131,6 +1173,7 @@ def _build_travel_graph():
             "handle_destination_discovery": "handle_destination_discovery",
             "handle_directions": "handle_directions",
             "handle_itinerary": "handle_itinerary",
+            "handle_general_chat": "handle_general_chat",
             "save_response": "save_response",  # error path
         },
     )
@@ -1154,6 +1197,7 @@ def _build_travel_graph():
     graph.add_edge("handle_destination_discovery", "save_response")
     graph.add_edge("handle_directions", "save_response")
     graph.add_edge("handle_itinerary", "save_response")
+    graph.add_edge("handle_general_chat", "save_response")
     graph.add_edge("save_response", END)
 
     # Compile with MemorySaver for multi-turn conversation memory

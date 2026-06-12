@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import chat_routes
+from .routes import user_routes
 from .database import engine, Base
+
+# Import all models so Base.metadata knows about them
+from .models import place_model  # noqa: F401
+from .models import user_model   # noqa: F401
 
 # Create database tables if they don't exist
 Base.metadata.create_all(bind=engine)
@@ -19,7 +24,9 @@ app.add_middleware(
 
 # Include routers
 app.include_router(chat_routes.router)
+app.include_router(user_routes.router)
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+
