@@ -5,9 +5,7 @@ __pycache__/
 
 # Node
 frontend/node_modules/
-nextjs-frontend/node_modules/
-nextjs-frontend/.next/
-nextjs-frontend/node_modules/
+nextjs-frontend/
 
 
 # Agent files
