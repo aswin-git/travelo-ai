@@ -36,6 +36,8 @@ export default function App() {
   const [mealPreference, setMealPreference] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null)
+  const [savedItems, setSavedItems] = useState([])
+  const [pinPopover, setPinPopover] = useState(null) // { id, name }
 
   const chatEndRef = useRef(null)
 
@@ -51,6 +53,7 @@ export default function App() {
       setDestination('Explore')
       setLatestData(null)
       setItineraryData(null)
+      fetchSavedItems()
     }
   }, [user])
 
@@ -62,6 +65,22 @@ export default function App() {
     if (accessToken) h['Authorization'] = `Bearer ${accessToken}`
     return h
   }, [accessToken])
+
+  const fetchSavedItems = useCallback(async () => {
+    if (!accessToken) return
+    try {
+      const res = await fetch(`${API}/user/saved-items`, { headers: authHeaders() })
+      if (res.ok) setSavedItems(await res.json())
+    } catch (err) {
+      console.error('Failed to fetch saved items:', err)
+    }
+  }, [accessToken, authHeaders])
+
+  // Expose refresh for sidebar
+  useEffect(() => {
+    window.__refreshSavedItems = fetchSavedItems
+    return () => delete window.__refreshSavedItems
+  }, [fetchSavedItems])
 
   // Auto-save chat after each message exchange
   const saveChatSession = useCallback(async (messages, dest) => {
@@ -146,6 +165,67 @@ export default function App() {
     } catch (err) {
       setSaveStatus('error')
       setTimeout(() => setSaveStatus(null), 2000)
+    }
+  }
+
+  // ═══════ Saved Items ═══════
+  const isItemSaved = (itemType, itemName) => {
+    return savedItems.find(i => i.item_type === itemType && i.item_name === itemName)
+  }
+
+  const handleSaveItem = async (itemType, itemName, itemData) => {
+    if (!accessToken) return
+    try {
+      const res = await fetch(`${API}/user/saved-items`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          item_type: itemType,
+          item_name: itemName,
+          destination: destination,
+          item_data: itemData,
+        }),
+      })
+      if (res.ok) {
+        const newItem = await res.json()
+        setSavedItems(prev => [newItem, ...prev.filter(i => i.id !== newItem.id)])
+        window.__refreshSidebarSavedItems?.()
+        
+        // If event, show pin popover immediately
+        if (itemType === 'event') {
+          setPinPopover({ id: newItem.id, name: itemName })
+        }
+      }
+    } catch (err) {
+      console.error('Failed to save item:', err)
+    }
+  }
+
+  const handleUnsaveItem = async (id) => {
+    try {
+      await fetch(`${API}/user/saved-items/${id}`, { method: 'DELETE', headers: authHeaders() })
+      setSavedItems(prev => prev.filter(i => i.id !== id))
+      window.__refreshSidebarSavedItems?.()
+    } catch (err) {
+      console.error('Failed to unsave item:', err)
+    }
+  }
+
+  const handlePinItem = async (id, day) => {
+    try {
+      const res = await fetch(`${API}/user/saved-items/${id}/pin`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ pinned_day: day ? Number(day) : null }),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setSavedItems(prev => prev.map(i => i.id === id ? updated : i))
+        setPinPopover(null)
+        window.__refreshSidebarSavedItems?.()
+      }
+    } catch (err) {
+      console.error('Failed to pin item:', err)
     }
   }
 
@@ -760,9 +840,22 @@ export default function App() {
                         </h3>
                         <div className="card-subtitle">{hotel.address || destination}</div>
                       </div>
-                      <div className="card-price">
-                        <div className="price-val">₹{hotel.price}</div>
-                        <div className="price-tag">Per Night</div>
+                      <div className="card-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                        <button 
+                          className={`save-item-btn ${isItemSaved('hotel', hotel.name) ? 'saved' : ''}`}
+                          onClick={() => {
+                            const saved = isItemSaved('hotel', hotel.name);
+                            if (saved) handleUnsaveItem(saved.id);
+                            else handleSaveItem('hotel', hotel.name, hotel);
+                          }}
+                          title={isItemSaved('hotel', hotel.name) ? 'Remove from Preferences' : 'Add to Preferences'}
+                        >
+                          {isItemSaved('hotel', hotel.name) ? '🔖' : '📑'}
+                        </button>
+                        <div className="card-price" style={{ textAlign: 'right' }}>
+                          <div className="price-val">₹{hotel.price}</div>
+                          <div className="price-tag">Per Night</div>
+                        </div>
                       </div>
                     </div>
 
@@ -812,12 +905,25 @@ export default function App() {
                           {rest.name}
                         </h3>
                       </div>
-                      {rest.rating && (
-                        <div className="card-price">
-                          <div className="price-val">★ {rest.rating}</div>
-                          <div className="price-tag">{rest.reviews} Reviews</div>
-                        </div>
-                      )}
+                      <div className="card-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {rest.rating && (
+                          <div className="card-price" style={{ textAlign: 'right' }}>
+                            <div className="price-val">★ {rest.rating}</div>
+                            <div className="price-tag">{rest.reviews} Reviews</div>
+                          </div>
+                        )}
+                        <button 
+                          className={`save-item-btn ${isItemSaved('restaurant', rest.name) ? 'saved' : ''}`}
+                          onClick={() => {
+                            const saved = isItemSaved('restaurant', rest.name);
+                            if (saved) handleUnsaveItem(saved.id);
+                            else handleSaveItem('restaurant', rest.name, rest);
+                          }}
+                          title={isItemSaved('restaurant', rest.name) ? 'Remove from Preferences' : 'Add to Preferences'}
+                        >
+                          {isItemSaved('restaurant', rest.name) ? '🔖' : '📑'}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="pills">
@@ -857,12 +963,25 @@ export default function App() {
                           {attr.name}
                         </h3>
                       </div>
-                      {attr.rating && (
-                        <div className="card-price">
-                          <div className="price-val">★ {attr.rating}</div>
-                          <div className="price-tag">{attr.reviews} Reviews</div>
-                        </div>
-                      )}
+                      <div className="card-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {attr.rating && (
+                          <div className="card-price" style={{ textAlign: 'right' }}>
+                            <div className="price-val">★ {attr.rating}</div>
+                            <div className="price-tag">{attr.reviews} Reviews</div>
+                          </div>
+                        )}
+                        <button 
+                          className={`save-item-btn ${isItemSaved('attraction', attr.name) ? 'saved' : ''}`}
+                          onClick={() => {
+                            const saved = isItemSaved('attraction', attr.name);
+                            if (saved) handleUnsaveItem(saved.id);
+                            else handleSaveItem('attraction', attr.name, attr);
+                          }}
+                          title={isItemSaved('attraction', attr.name) ? 'Remove from Preferences' : 'Add to Preferences'}
+                        >
+                          {isItemSaved('attraction', attr.name) ? '🔖' : '📑'}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="card-summary">
@@ -898,6 +1017,17 @@ export default function App() {
                           {evt.title}
                         </h3>
                       </div>
+                      <button 
+                        className={`save-item-btn ${isItemSaved('event', evt.title) ? 'saved' : ''}`}
+                        onClick={() => {
+                          const saved = isItemSaved('event', evt.title);
+                          if (saved) handleUnsaveItem(saved.id);
+                          else handleSaveItem('event', evt.title, evt);
+                        }}
+                        title={isItemSaved('event', evt.title) ? 'Remove from Preferences' : 'Add to Preferences'}
+                      >
+                        {isItemSaved('event', evt.title) ? '🔖' : '📑'}
+                      </button>
                     </div>
 
                     <div className="pills">
@@ -931,6 +1061,50 @@ export default function App() {
           )}
         </div>
       </div>
+      {/* Pin to Day Popover */}
+      {pinPopover && (
+        <div className="modal-overlay" onClick={() => setPinPopover(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>📌 Pin Event</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.9rem' }}>
+              Pin <strong>{pinPopover.name}</strong> to a specific day in your itinerary. The travel planner will schedule your day around this event.
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {[1, 2, 3, 4, 5].map(day => (
+                <button
+                  key={day}
+                  onClick={() => handlePinItem(pinPopover.id, day)}
+                  style={{
+                    background: 'var(--bg-darker)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-main)',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  Day {day}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setPinPopover(null)}
+              style={{
+                marginTop: '20px',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   )

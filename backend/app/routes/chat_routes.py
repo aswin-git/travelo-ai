@@ -10,6 +10,8 @@ from ..models.place_model import (
 from ..services.graph_orchestrator import run_travel_graph
 from ..services.review_service import get_and_summarize_reviews, save_summary_to_db
 from ..services.place_service import get_place_by_name
+from ..auth.dependencies import get_optional_user
+from ..models.user_model import User
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -23,11 +25,15 @@ def health_check():
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat_endpoint(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_optional_user),
+):
     """Main chat endpoint — delegates all orchestration to the LangGraph travel agent."""
     logger.info(f"Incoming chat request: {request.message}")
     try:
-        result = await run_travel_graph(request, db)
+        result = await run_travel_graph(request, db, user=user)
 
         # Build ChatResponse from graph output, filtering to valid fields only
         response_fields = {

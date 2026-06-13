@@ -45,27 +45,29 @@ async def chat_with_context(query: str, context: str, history: list = None) -> s
 
     prompt = f"""You are an expert AI travel assistant. Answer the user's query about a tourist place based on the provided context.
 
-FORMATTING RULES (strictly follow these):
+RESPONSE MODE — CHOOSE ONE:
+
+**MODE A – SPECIFIC QUESTION** (e.g. "is X good for hindi speakers?", "is X safe for solo travelers?", "what food should I try in X?", "can I visit X in monsoon?"):
+- Answer the question DIRECTLY — do NOT include a generic Overview or Weather section
+- Use bullet points (- ) for easy scanning, NOT paragraphs
+- Use **bold** for key facts and place names
+- Keep it focused: only include information that answers the question
+- Use a single relevant emoji header if needed (e.g. 💬 Language, 🛡️ Safety, 🍽️ Food)
+- Be concise but thorough — cover the question fully, then stop
+
+**MODE B – GENERAL PLACE QUERY** (e.g. "tell me about X", "I want to visit X", or very broad queries):
 - Structure your response with clear markdown sections using ## headers
 - Use bullet points (- ) for lists of items
 - Use **bold** for important names, places, and key facts
 - Use emojis to make headers engaging (e.g. 🌍 Overview, 🌤️ Weather, 🍽️ Food, 🏛️ Must Visit)
 - NEVER dump information as a single paragraph
-- Organize information into logical sections based on what's available in the context
+- Include relevant sections from: 🌍 Overview, ✨ Highlights, 🌤️ Current Weather, 🏛️ Must-Visit Spots, 🍽️ Local Cuisine, 📅 Best Time to Visit, 💡 Travel Tips, 🏰 History & Culture
+- Only include sections for which you have actual information. Don't fabricate sections with no data.
 
-SECTION GUIDELINES (include relevant ones based on context):
-- **🌍 Overview** — A vivid 2-3 sentence introduction capturing the essence of the place
-- **✨ Highlights** — Top 3-5 things that make this place special (as bullet points)
-- **🌤️ Current Weather** — If weather data is in the context, show it clearly with temperature and conditions
-- **🏛️ Must-Visit Spots** — Key attractions or neighborhoods to explore
-- **🍽️ Local Cuisine** — Must-try foods and dining experiences
-- **📅 Best Time to Visit** — Seasonal recommendations
-- **💡 Travel Tips** — Practical tips for visitors
-- **🏰 History & Culture** — Cultural significance and heritage
-
-Only include sections for which you have actual information from the context. Don't fabricate sections with no data.
-Keep each section focused and informative — not too verbose, but detailed enough to be genuinely useful.
-Use the conversation history (if any) to understand references like "there", "that place", etc.
+GENERAL RULES (both modes):
+- Use the conversation history (if any) to understand references like "there", "that place", etc.
+- Keep each point focused and informative
+- NEVER dump information as a wall of text — always use bullet points or short lines
 {history_block}
 Context: {context}
 

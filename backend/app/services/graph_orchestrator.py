@@ -74,6 +74,7 @@ class TravelState(TypedDict, total=False):
     place_type: str
     check_in: Optional[str]
     check_out: Optional[str]
+    effective_query: Optional[str]  # Reconstructed query from corrections/follow-ups
 
     # ── Response outputs (built by handler nodes) ───────────────────────────
     response_text: str
@@ -195,6 +196,21 @@ async def classify_intent(state: TravelState) -> dict:
 - "num_days": number of days for itinerary if mentioned (or null)
 - "pacing": one of ["relaxed", "packed"] if mentioned or inferred (or null)
 - "meal_preference": one of ["fixed", "flexible"] if mentioned (or null). "fixed" means meals at standard Breakfast/Lunch/Dinner times, "flexible" means restaurants placed dynamically on the route
+- "effective_query": the FULL reconstructed question the user is really asking. This is CRITICAL for corrections and follow-ups:
+    - If user says "i mean kochi" after asking "is kooch good for tamil speakers?", effective_query = "is kochi a good place for tamil speaking people?"
+    - If user says "what about hotels there?" after discussing Paris, effective_query = "what about hotels in Paris?"
+    - If user message is already a complete question, effective_query = the user message as-is (with typos corrected)
+    - ALWAYS produce a complete, self-contained question that makes sense without conversation history
+
+CRITICAL — CORRECTIONS & FOLLOW-UPS:
+When the user says things like "i mean X", "sorry, I meant X", "no, X", or corrects a typo/name from a previous message:
+1. Look at the PREVIOUS conversation to find the original question
+2. Set "intent" to match the ORIGINAL question's intent (not "place_info" by default)
+3. Set "destination" to the CORRECTED place name
+4. Set "effective_query" to the original question with the corrected entity swapped in
+Do NOT treat corrections as a brand new generic query about the place.
+
+Also handle TYPOS intelligently: if user writes "kooch" but likely means "Kochi", or "bnaglore" for "Bangalore", resolve to the correct spelling.
 {history_block}
 User message: {message}"""
 
@@ -282,6 +298,9 @@ User message: {message}"""
             "meal_preference": meal_preference,
         }
 
+    effective_query = parsed.get("effective_query") or message
+    logger.info(f"Effective query: {effective_query}")
+
     return {
         "intent": intent,
         "destination": destination,
@@ -300,6 +319,7 @@ User message: {message}"""
         "pacing": pacing,
         "missing_info": None,
         "meal_preference": meal_preference,
+        "effective_query": effective_query,
     }
 
 
@@ -660,12 +680,16 @@ async def handle_events(state: TravelState, config: RunnableConfig) -> dict:
 async def handle_place_info(state: TravelState, config: RunnableConfig) -> dict:
     """Delegates to the existing RAG pipeline for place information."""
     db: Session = config["configurable"]["db"]
-    message = state["message"]
     destination = state.get("destination", "")
     place_type = state.get("place_type", "poi")
-
     history = state.get("conversation_history")
-    result = await process_chat_query(db, message, destination)
+
+    # Use effective_query (reconstructed from corrections/follow-ups) if available,
+    # otherwise fall back to raw message
+    effective_query = state.get("effective_query") or state["message"]
+    logger.info(f"handle_place_info using effective_query: {effective_query}")
+
+    result = await process_chat_query(db, effective_query, destination, history=history)
 
     place_info = None
     if result.get("place_info"):
@@ -796,6 +820,7 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     )
 
     db: Session = config["configurable"]["db"]
+    user_id = config["configurable"].get("user_id")
     destination = state.get("destination", "")
     num_days = state.get("num_days", 3)
     pacing = state.get("pacing", "relaxed")
@@ -808,6 +833,42 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
         f"Generating geo-optimized {num_days}-day {pacing} itinerary for {destination}"
         f" (origin: {start_location or 'destination center'}, meals: {meal_preference})"
     )
+
+    # ── Phase 0: Fetch user's saved items for this destination ──────────────
+    from ..models.user_model import SavedItem
+
+    saved_attractions = []
+    saved_restaurants = []
+    saved_events = []
+    saved_hotels = []
+
+    if user_id:
+        try:
+            user_saved = (
+                db.query(SavedItem)
+                .filter(
+                    SavedItem.user_id == user_id,
+                    SavedItem.destination.ilike(f"%{destination}%"),
+                )
+                .all()
+            )
+            for si in user_saved:
+                item = {"name": si.item_name, "pinned_day": si.pinned_day, **(si.item_data or {})}
+                if si.item_type == "attraction":
+                    saved_attractions.append(item)
+                elif si.item_type == "restaurant":
+                    saved_restaurants.append(item)
+                elif si.item_type == "event":
+                    saved_events.append(item)
+                elif si.item_type == "hotel":
+                    saved_hotels.append(item)
+            logger.info(
+                f"User saved items for {destination}: "
+                f"{len(saved_attractions)} attractions, {len(saved_restaurants)} restaurants, "
+                f"{len(saved_events)} events, {len(saved_hotels)} hotels"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to fetch saved items: {e}")
 
     # ── Phase 1: Fetch candidate places ────────────────────────────────────
     attractions_raw = []
@@ -824,6 +885,20 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
         logger.info(f"Fetched {len(restaurants_raw)} restaurants for {destination}")
     except Exception as e:
         logger.warning(f"Restaurants fetch failed: {e}")
+
+    # Inject saved attractions/restaurants into candidate pools (at front, so they're prioritized)
+    saved_attr_names = {a["name"].lower() for a in saved_attractions}
+    saved_rest_names = {r["name"].lower() for r in saved_restaurants}
+
+    for sa in saved_attractions:
+        if not any(a.get("name", "").lower() == sa["name"].lower() for a in attractions_raw):
+            attractions_raw.insert(0, sa)
+            logger.info(f"Injected saved attraction '{sa['name']}' into candidates")
+
+    for sr in saved_restaurants:
+        if not any(r.get("name", "").lower() == sr["name"].lower() for r in restaurants_raw):
+            restaurants_raw.insert(0, sr)
+            logger.info(f"Injected saved restaurant '{sr['name']}' into candidates")
 
     # ── Phase 2: Geocode everything ────────────────────────────────────────
     # Resolve the destination ONCE — this gives us lat/lon for the Tier-3
@@ -931,11 +1006,70 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     traveler_hint = f"The traveler type is: {traveler_type}." if traveler_type else ""
     origin_hint = f"The traveler is starting from {start_location}." if start_location else ""
 
+    # Build anchored events/items section for pinned saved items
+    anchored_lines = []
+    for evt in saved_events:
+        if evt.get("pinned_day"):
+            evt_name = evt["name"]
+            evt_date = evt.get("date_string", "")
+            evt_desc = evt.get("description", "")[:100]
+            anchored_lines.append(
+                f"- Day {evt['pinned_day']}: \"{evt_name}\" (Event"
+                f"{', ' + evt_date if evt_date else ''}) — {evt_desc}"
+            )
+    for attr in saved_attractions:
+        if attr.get("pinned_day"):
+            anchored_lines.append(
+                f"- Day {attr['pinned_day']}: \"{attr['name']}\" (Must-visit attraction)"
+            )
+    for rest in saved_restaurants:
+        if rest.get("pinned_day"):
+            anchored_lines.append(
+                f"- Day {rest['pinned_day']}: \"{rest['name']}\" (Must-visit restaurant)"
+            )
+    for htl in saved_hotels:
+        if htl.get("pinned_day"):
+            anchored_lines.append(
+                f"- Day {htl['pinned_day']}: \"{htl['name']}\" (Preferred hotel)"
+            )
+
+    anchored_section = ""
+    if anchored_lines:
+        anchored_section = (
+            "\n\nANCHORED ITEMS (MUST be scheduled on the specified day — these are NON-NEGOTIABLE):\n"
+            + "\n".join(anchored_lines)
+            + "\n\nIMPORTANT: If an event is anchored to a specific day, build the REST of that day's schedule AROUND it. "
+            "The anchored event takes priority — place other attractions before/after it. "
+            "Use the anchored hotel as the stay for that night if one is pinned.\n"
+        )
+
+    # Build saved items hint (non-pinned but saved = user wants to include them)
+    saved_hint_lines = []
+    for attr in saved_attractions:
+        if not attr.get("pinned_day"):
+            saved_hint_lines.append(f"- {attr['name']} (attraction)")
+    for rest in saved_restaurants:
+        if not rest.get("pinned_day"):
+            saved_hint_lines.append(f"- {rest['name']} (restaurant)")
+    for evt in saved_events:
+        if not evt.get("pinned_day"):
+            saved_hint_lines.append(f"- {evt['name']} (event)")
+    for htl in saved_hotels:
+        if not htl.get("pinned_day"):
+            saved_hint_lines.append(f"- {htl['name']} (hotel)")
+
+    saved_section = ""
+    if saved_hint_lines:
+        saved_section = (
+            "\n\nUSER'S SAVED ITEMS (try to include these in the itinerary when possible):\n"
+            + "\n".join(saved_hint_lines) + "\n"
+        )
+
     itinerary_prompt = f"""You are an expert travel planner building a detailed, realistic {num_days}-day itinerary for {destination}.
 {origin_hint}
 {budget_hint}
 {traveler_hint}
-
+{anchored_section}{saved_section}
 I have pre-ordered the attractions and restaurants below by geographic proximity using nearest-neighbor routing. DO NOT reorder them.
 
 Your job is ONLY to:
@@ -1212,16 +1346,18 @@ travel_graph = _build_travel_graph()
 # ═══════════════════════════════════════════════════════════════════════════
 #  PUBLIC ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════════
-async def run_travel_graph(request: Any, db: Session) -> dict:
+async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
     """
     Runs the LangGraph travel agent for a single user message.
 
     Args:
         request: The ChatRequest object containing message, budget, etc.
         db: SQLAlchemy database session.
+        user: Optional authenticated user (for saved items).
     """
     thread_id = request.session_id or uuid4().hex
-    config = {"configurable": {"thread_id": thread_id, "db": db}}
+    user_id = str(user.id) if user else None
+    config = {"configurable": {"thread_id": thread_id, "db": db, "user_id": user_id}}
 
     initial_state: TravelState = {
         "message": request.message,
@@ -1239,7 +1375,7 @@ async def run_travel_graph(request: Any, db: Session) -> dict:
         "meal_preference": request.meal_preference,
     }
 
-    logger.info(f"Running travel graph with thread_id={thread_id}")
+    logger.info(f"Running travel graph with thread_id={thread_id}, user_id={user_id}")
     result = await travel_graph.ainvoke(initial_state, config)
 
     # Normalize: node outputs use 'response_text', but ChatResponse expects 'response'

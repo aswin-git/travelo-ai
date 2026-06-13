@@ -401,6 +401,33 @@ body {
   cursor: pointer;
 }
 
+/* Save Item Button */
+.save-item-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-item-btn:hover {
+  border-color: var(--primary);
+  color: var(--text-main);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.save-item-btn.saved {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
 /* Modal Popup */
 .modal-overlay {
   position: fixed;

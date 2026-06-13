@@ -10,10 +10,11 @@ from datetime import datetime
 from ..database import get_db
 from ..auth.dependencies import get_current_user
 from ..models.user_model import (
-    User, ChatSession, SavedItinerary,
+    User, ChatSession, SavedItinerary, SavedItem,
     UserResponse, UpdateUserRequest,
     ChatSessionListItem, ChatSessionResponse, SaveChatRequest,
     SaveItineraryRequest, SavedItineraryListItem, SavedItineraryResponse,
+    SaveItemRequest, UpdatePinRequest, SavedItemResponse,
 )
 from ..utils.logger import get_logger
 
@@ -207,5 +208,109 @@ def delete_itinerary(
     if not itinerary:
         raise HTTPException(status_code=404, detail="Itinerary not found")
     db.delete(itinerary)
+    db.commit()
+    return {"status": "deleted"}
+
+
+# ═══════ Saved Items ═══════
+
+@router.post("/saved-items", response_model=SavedItemResponse)
+def save_item(
+    body: SaveItemRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Save a hotel/attraction/restaurant/event. Upserts if already saved."""
+    existing = (
+        db.query(SavedItem)
+        .filter(
+            SavedItem.user_id == user.id,
+            SavedItem.item_type == body.item_type,
+            SavedItem.item_name == body.item_name,
+        )
+        .first()
+    )
+    if existing:
+        # Update existing saved item
+        existing.item_data = body.item_data
+        existing.destination = body.destination or existing.destination
+        if body.pinned_day is not None:
+            existing.pinned_day = body.pinned_day
+        if body.notes is not None:
+            existing.notes = body.notes
+        db.commit()
+        db.refresh(existing)
+        logger.info(f"Updated saved item '{body.item_name}' for user {user.email}")
+        return existing
+
+    item = SavedItem(
+        user_id=user.id,
+        item_type=body.item_type,
+        item_name=body.item_name,
+        destination=body.destination,
+        item_data=body.item_data,
+        pinned_day=body.pinned_day,
+        notes=body.notes,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    logger.info(f"Saved item '{body.item_name}' ({body.item_type}) for user {user.email}")
+    return item
+
+
+@router.get("/saved-items", response_model=List[SavedItemResponse])
+def list_saved_items(
+    destination: str = None,
+    item_type: str = None,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List saved items, optionally filtered by destination and/or item_type."""
+    query = db.query(SavedItem).filter(SavedItem.user_id == user.id)
+    if destination:
+        query = query.filter(SavedItem.destination.ilike(f"%{destination}%"))
+    if item_type:
+        query = query.filter(SavedItem.item_type == item_type)
+    return query.order_by(SavedItem.created_at.desc()).all()
+
+
+@router.patch("/saved-items/{item_id}/pin", response_model=SavedItemResponse)
+def pin_saved_item(
+    item_id: str,
+    body: UpdatePinRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Pin or unpin a saved item to a specific itinerary day."""
+    item = (
+        db.query(SavedItem)
+        .filter(SavedItem.user_id == user.id, SavedItem.id == item_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Saved item not found")
+    item.pinned_day = body.pinned_day
+    db.commit()
+    db.refresh(item)
+    logger.info(f"{'Pinned' if body.pinned_day else 'Unpinned'} item '{item.item_name}' to Day {body.pinned_day}")
+    return item
+
+
+@router.delete("/saved-items/{item_id}")
+def delete_saved_item(
+    item_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Remove a saved item."""
+    item = (
+        db.query(SavedItem)
+        .filter(SavedItem.user_id == user.id, SavedItem.id == item_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Saved item not found")
+    db.delete(item)
     db.commit()
     return {"status": "deleted"}

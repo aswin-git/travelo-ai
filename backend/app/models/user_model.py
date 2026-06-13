@@ -27,6 +27,7 @@ class User(Base):
 
     chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
     saved_itineraries = relationship("SavedItinerary", back_populates="user", cascade="all, delete-orphan")
+    saved_items = relationship("SavedItem", back_populates="user", cascade="all, delete-orphan")
 
 
 class ChatSession(Base):
@@ -57,6 +58,22 @@ class SavedItinerary(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="saved_itineraries")
+
+
+class SavedItem(Base):
+    __tablename__ = "saved_items"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    item_type = Column(Text, nullable=False)       # 'hotel', 'attraction', 'restaurant', 'event'
+    item_name = Column(Text, nullable=False)
+    destination = Column(Text)
+    item_data = Column(JSONB, default={})
+    pinned_day = Column(Integer)
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="saved_items")
 
 
 # ═══════ Pydantic Schemas ═══════
@@ -137,3 +154,31 @@ class SaveChatRequest(BaseModel):
     title: Optional[str] = "New Chat"
     messages: list = []
     destination: Optional[str] = None
+
+
+# ═══════ Saved Items Schemas ═══════
+
+class SaveItemRequest(BaseModel):
+    item_type: str            # 'hotel', 'attraction', 'restaurant', 'event'
+    item_name: str
+    destination: Optional[str] = None
+    item_data: dict = {}
+    pinned_day: Optional[int] = None
+    notes: Optional[str] = None
+
+
+class UpdatePinRequest(BaseModel):
+    pinned_day: Optional[int] = None  # null to unpin
+
+
+class SavedItemResponse(BaseModel):
+    id: uuid.UUID
+    item_type: str
+    item_name: str
+    destination: Optional[str] = None
+    item_data: dict = {}
+    pinned_day: Optional[int] = None
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
