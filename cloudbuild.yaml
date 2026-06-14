@@ -1,0 +1,88 @@
+# Travelo AI — Cloud Build config for CI/CD
+# Trigger: Push to main branch
+# Connects to: Artifact Registry + Cloud Run
+
+steps:
+  # ── Build Backend ──
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGISTRY}/backend:$COMMIT_SHA'
+      - '-t'
+      - '${_REGISTRY}/backend:latest'
+      - './backend'
+    id: 'build-backend'
+
+  # ── Build Frontend (with backend URL baked in) ──
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'VITE_API_URL=${_BACKEND_URL}'
+      - '--build-arg'
+      - 'VITE_SUPABASE_URL=${_SUPABASE_URL}'
+      - '--build-arg'
+      - 'VITE_SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY}'
+      - '-t'
+      - '${_REGISTRY}/frontend:$COMMIT_SHA'
+      - '-t'
+      - '${_REGISTRY}/frontend:latest'
+      - './frontend'
+    id: 'build-frontend'
+
+  # ── Push Backend ──
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '--all-tags', '${_REGISTRY}/backend']
+    id: 'push-backend'
+    waitFor: ['build-backend']
+
+  # ── Push Frontend ──
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '--all-tags', '${_REGISTRY}/frontend']
+    id: 'push-frontend'
+    waitFor: ['build-frontend']
+
+  # ── Deploy Backend to Cloud Run ──
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'travelo-backend'
+      - '--image=${_REGISTRY}/backend:$COMMIT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--port=8080'
+    id: 'deploy-backend'
+    waitFor: ['push-backend']
+
+  # ── Deploy Frontend to Cloud Run ──
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'travelo-frontend'
+      - '--image=${_REGISTRY}/frontend:$COMMIT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=256Mi'
+      - '--cpu=1'
+      - '--port=8080'
+    id: 'deploy-frontend'
+    waitFor: ['push-frontend']
+
+substitutions:
+  _REGION: asia-south1
+  _REGISTRY: asia-south1-docker.pkg.dev/${PROJECT_ID}/travelo-ai
+  _BACKEND_URL: https://travelo-backend-HASH-uc.a.run.app  # Update after first deploy
+  _SUPABASE_URL: https://qbolfgnnifmnixpajjgn.supabase.co
+  _SUPABASE_ANON_KEY: sb_publishable_vv7lVtRFnngS7Y31rL_Txg_U42zP6w_
+
+timeout: 1800s  # 30 min (PyTorch build is slow)
+
+options:
+  logging: CLOUD_LOGGING_ONLY

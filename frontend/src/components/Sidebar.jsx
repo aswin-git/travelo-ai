@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE } from '../config'
 
 export default function Sidebar({
   collapsed,
@@ -17,7 +18,7 @@ export default function Sidebar({
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null) // { type, id }
 
-  const API = 'http://127.0.0.1:8000'
+  const API = API_BASE
 
   const authHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
@@ -204,7 +205,7 @@ export default function Sidebar({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
               </svg>
-              💖 Preferred Places
+              PREFERED PLACES
             </div>
             <div className="sidebar-list">
               {savedItems.length === 0 ? (
@@ -216,7 +217,7 @@ export default function Sidebar({
                     if (items.length === 0) return null;
                     const typeLabel = type === 'hotel' ? 'Hotels' : type === 'restaurant' ? 'Restaurants' : type === 'attraction' ? 'Attractions' : 'Events';
                     const icon = type === 'hotel' ? '🏨' : type === 'restaurant' ? '🍽️' : type === 'attraction' ? '🏛️' : '📅';
-                    
+
                     return (
                       <div key={type} style={{ marginBottom: '12px' }}>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>

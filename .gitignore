@@ -13,6 +13,8 @@ nextjs-frontend/
 
 # Environment variables
 backend/.env
+.env.production
+.env.production.local
 
 # Chroma vector DB
 backend/chroma_data/

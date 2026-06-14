@@ -120,6 +120,8 @@ class ChatRequest(BaseModel):
     num_days: Optional[int] = None
     pacing: Optional[str] = None  # "relaxed" or "packed"
     meal_preference: Optional[str] = None  # "fixed" or "flexible"
+    crowd_aware: Optional[bool] = None  # Whether to consider crowd data
+    crowd_precision: Optional[str] = None  # "precise" (SerpAPI) or "approximate" (LLM estimate)
 
 class HotelResult(BaseModel):
     name: str
@@ -182,6 +184,7 @@ class ItinerarySlot(BaseModel):
     travel_to_next: Optional[str] = None  # "🚗 15 mins drive"
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    crowd_status: Optional[str] = None  # "Not Crowded" / "Moderately Crowded" / "Very Crowded" / "Unknown"
 
 class ItineraryDay(BaseModel):
     day_number: int

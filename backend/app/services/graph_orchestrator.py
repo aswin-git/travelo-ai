@@ -102,6 +102,8 @@ class TravelState(TypedDict, total=False):
     pacing: Optional[str]
     itinerary: Optional[dict]
     meal_preference: Optional[str]
+    crowd_aware: Optional[bool]
+    crowd_precision: Optional[str]  # "precise" or "approximate"
 
     # ── Internal routing flag ───────────────────────────────────────────────
     _hotel_found: bool  # used by handle_specific_hotel → fallback logic
@@ -196,6 +198,7 @@ async def classify_intent(state: TravelState) -> dict:
 - "num_days": number of days for itinerary if mentioned (or null)
 - "pacing": one of ["relaxed", "packed"] if mentioned or inferred (or null)
 - "meal_preference": one of ["fixed", "flexible"] if mentioned (or null). "fixed" means meals at standard Breakfast/Lunch/Dinner times, "flexible" means restaurants placed dynamically on the route
+- "crowd_aware": true if user mentions wanting to avoid crowds, crowd-aware planning, less crowded spots, or quiet places (or null)
 - "effective_query": the FULL reconstructed question the user is really asking. This is CRITICAL for corrections and follow-ups:
     - If user says "i mean kochi" after asking "is kooch good for tamil speakers?", effective_query = "is kochi a good place for tamil speaking people?"
     - If user says "what about hotels there?" after discussing Paris, effective_query = "what about hotels in Paris?"
@@ -257,6 +260,8 @@ User message: {message}"""
     num_days = parsed.get("num_days") or state.get("num_days")
     pacing = parsed.get("pacing") or state.get("pacing")
     meal_preference = parsed.get("meal_preference") or state.get("meal_preference")
+    crowd_aware = parsed.get("crowd_aware") if parsed.get("crowd_aware") is not None else state.get("crowd_aware")
+    crowd_precision = state.get("crowd_precision")  # Only set via frontend form
 
     logger.info(
         f"Resolved Context -> Intent: {intent}, Dest: {destination}, Budget: {budget}, "
@@ -281,6 +286,7 @@ User message: {message}"""
         if not pacing: missing_info.append("pacing")
         if not start_location: missing_info.append("itinerary_start_location")
         if not meal_preference: missing_info.append("meal_preference")
+        if crowd_aware is None: missing_info.append("crowd_aware")
 
     if missing_info:
         logger.info(f"Missing info for {intent}: {missing_info}")
@@ -320,6 +326,8 @@ User message: {message}"""
         "missing_info": None,
         "meal_preference": meal_preference,
         "effective_query": effective_query,
+        "crowd_aware": crowd_aware,
+        "crowd_precision": crowd_precision,
     }
 
 
@@ -827,11 +835,14 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     budget = state.get("budget")
     traveler_type = state.get("traveler_type")
     start_location = state.get("start_location")
+    crowd_aware = state.get("crowd_aware", False)
+    crowd_precision = state.get("crowd_precision", "approximate")
     meal_preference = state.get("meal_preference", "fixed")
 
     logger.info(
         f"Generating geo-optimized {num_days}-day {pacing} itinerary for {destination}"
-        f" (origin: {start_location or 'destination center'}, meals: {meal_preference})"
+        f" (origin: {start_location or 'destination center'}, meals: {meal_preference},"
+        f" crowd_aware: {crowd_aware}, precision: {crowd_precision})"
     )
 
     # ── Phase 0: Fetch user's saved items for this destination ──────────────
@@ -960,6 +971,20 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
         # No restaurants geocoded — just tag attractions
         interleaved = [{**a, "category": "attraction"} for a in ordered_attractions]
 
+    # ── Phase 4.5: Fetch crowd data (if crowd_aware + precise) ─────────────
+    crowd_data = {}
+    if crowd_aware and crowd_precision == "precise":
+        from ..services.crowd_service import batch_fetch_crowd_data
+        # Build list of places with data_id for crowd lookup
+        crowd_candidates = []
+        for item in interleaved:
+            if item.get("data_id"):
+                crowd_candidates.append(item)
+        if crowd_candidates:
+            logger.info(f"Fetching precise crowd data for {len(crowd_candidates)} places...")
+            crowd_data = batch_fetch_crowd_data(crowd_candidates)
+            logger.info(f"Got crowd data for {len(crowd_data)} places")
+
     # ── Phase 5: Split into days ───────────────────────────────────────────
     days_split = split_into_days(interleaved, num_days)
 
@@ -977,15 +1002,21 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
             lat = stop.get("latitude", 0)
             lon = stop.get("longitude", 0)
 
+            # Append crowd info if available (precise mode)
+            crowd_tag = ""
+            if crowd_aware and name in crowd_data:
+                cd = crowd_data[name]
+                crowd_tag = f", {cd['crowd_emoji']} {cd['crowd_label']}"
+
             if cat == "restaurant":
                 stop_lines.append(
                     f"  {stop_idx}. [RESTAURANT — {meal_type}] {name} "
-                    f"(Rating: {rating}) at ({lat:.4f}, {lon:.4f}): {desc}"
+                    f"(Rating: {rating}{crowd_tag}) at ({lat:.4f}, {lon:.4f}): {desc}"
                 )
             else:
                 stop_lines.append(
                     f"  {stop_idx}. [ATTRACTION] {name} "
-                    f"(Rating: {rating}) at ({lat:.4f}, {lon:.4f}): {desc}"
+                    f"(Rating: {rating}{crowd_tag}) at ({lat:.4f}, {lon:.4f}): {desc}"
                 )
 
         day_blocks.append(f"Day {day_idx}:\n" + "\n".join(stop_lines))
@@ -1065,10 +1096,38 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
             + "\n".join(saved_hint_lines) + "\n"
         )
 
+    # Build crowd awareness hint for prompt
+    crowd_hint = ""
+    if crowd_aware:
+        if crowd_precision == "precise":
+            crowd_hint = (
+                "\nCROWD AWARENESS (ENABLED — Precise Mode):\n"
+                "Crowd data tags are included next to each stop above (🟢 Not Crowded / 🟡 Moderately Crowded / 🔴 Very Crowded / ⚪ Unknown).\n"
+                "For each slot in the itinerary, you MUST include a \"crowd_status\" field with the crowd label.\n"
+                "If crowd data shows a place is Very Crowded, mention it in the description and suggest visiting early or late.\n"
+            )
+        else:
+            crowd_hint = (
+                "\nCROWD AWARENESS (ENABLED — Approximate Mode):\n"
+                "Based on the type of attraction, its popularity (rating + reviews), the day of week, and time of visit, "
+                "estimate how crowded each place is likely to be.\n"
+                "For each slot, include a \"crowd_status\" field with one of: \"Not Crowded\", \"Moderately Crowded\", \"Very Crowded\".\n"
+                "Use your knowledge of tourism patterns: temples/markets are crowded on weekends, "
+                "beaches peak around sunset, museums are quieter on weekdays mornings, etc.\n"
+            )
+
+    # Pre-compute crowd status example value for JSON template
+    crowd_status_example = '"Not Crowded"' if crowd_aware else 'null'
+    crowd_rule = (
+        'crowd_status is REQUIRED for every slot when crowd awareness is enabled '
+        '— use the crowd tags from the route data or estimate based on place type and time'
+    ) if crowd_aware else 'crowd_status should be null for all slots'
+
     itinerary_prompt = f"""You are an expert travel planner building a detailed, realistic {num_days}-day itinerary for {destination}.
 {origin_hint}
 {budget_hint}
 {traveler_hint}
+{crowd_hint}
 {anchored_section}{saved_section}
 I have pre-ordered the attractions and restaurants below by geographic proximity using nearest-neighbor routing. DO NOT reorder them.
 
@@ -1118,7 +1177,8 @@ Return a JSON object with this EXACT structure:
           "rating": null,
           "travel_to_next": "🚶 5 mins walk",
           "latitude": null,
-          "longitude": null
+          "longitude": null,
+          "crowd_status": null
         }},
         {{
           "time_slot": "Morning",
@@ -1132,7 +1192,8 @@ Return a JSON object with this EXACT structure:
           "rating": 4.5,
           "travel_to_next": "🚗 15 mins drive",
           "latitude": 10.0870,
-          "longitude": 77.0601
+          "longitude": 77.0601,
+          "crowd_status": {crowd_status_example}
         }},
         {{
           "time_slot": "Lunch",
@@ -1146,7 +1207,8 @@ Return a JSON object with this EXACT structure:
           "rating": null,
           "travel_to_next": "🚗 10 mins drive",
           "latitude": null,
-          "longitude": null
+          "longitude": null,
+          "crowd_status": null
         }},
         {{
           "time_slot": "Dinner",
@@ -1160,7 +1222,8 @@ Return a JSON object with this EXACT structure:
           "rating": null,
           "travel_to_next": "🚶 5 mins walk",
           "latitude": null,
-          "longitude": null
+          "longitude": null,
+          "crowd_status": null
         }},
         {{
           "time_slot": "Night",
@@ -1174,7 +1237,8 @@ Return a JSON object with this EXACT structure:
           "rating": null,
           "travel_to_next": null,
           "latitude": null,
-          "longitude": null
+          "longitude": null,
+          "crowd_status": null
         }}
       ]
     }}
@@ -1189,6 +1253,7 @@ CRITICAL RULES:
 - Hotel entry is REQUIRED at the end of every day — suggest a real well-known hotel/resort in {destination}
 - time_slot must be one of: "Breakfast", "Morning", "Lunch", "Afternoon", "Evening", "Dinner", "Night"
 - category must be one of: "attraction", "restaurant", "hotel"
+- {crowd_rule}
 - Return ONLY valid JSON, no markdown"""
 
     try:
@@ -1373,6 +1438,8 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
         "num_days": request.num_days,
         "pacing": request.pacing,
         "meal_preference": request.meal_preference,
+        "crowd_aware": request.crowd_aware,
+        "crowd_precision": request.crowd_precision,
     }
 
     logger.info(f"Running travel graph with thread_id={thread_id}, user_id={user_id}")
