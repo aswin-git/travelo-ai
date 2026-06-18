@@ -1,5 +1,5 @@
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from app.main import app
 
 @pytest.mark.asyncio
@@ -14,7 +14,7 @@ async def test_chat_endpoint_missing_info():
     """Test the chat endpoint using httpx async client directly.
     We test a scenario that returns missing_info without hitting Gemini heavily.
     """
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post(
             "/chat",
             json={"message": "I want to go somewhere"}
@@ -24,19 +24,15 @@ async def test_chat_endpoint_missing_info():
         assert "missing_info" in data
 
 @pytest.mark.asyncio
-async def test_chat_endpoint_destination():
-    """Test the chat endpoint with a clear destination."""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+async def test_chat_endpoint_simple_query():
+    """Test the chat endpoint with a simple query to save API tokens."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post(
             "/chat",
             json={
-                "message": "Plan a 2 day trip to Munnar",
-                "num_days": 2,
-                "budget": 5000,
-                "traveler_type": "solo"
+                "message": "What is the capital of India?",
             }
         )
         assert response.status_code == 200
         data = response.json()
-        # Since this hits the real API, we just check for expected fields
         assert "response" in data

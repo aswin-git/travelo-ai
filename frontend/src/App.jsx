@@ -332,9 +332,11 @@ export default function App() {
       }
 
       const aiMsg = { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt, show_attractions_prompt: data.show_attractions_prompt, show_restaurants_prompt: data.show_restaurants_prompt, show_events_prompt: data.show_events_prompt }
-      const newHistory = [...chatHistory, userMsg, aiMsg]
-      setChatHistory(newHistory)
-      saveChatSession(newHistory, data.place_info?.name || destination)
+      setChatHistory(prev => {
+        const newHistory = [...prev, aiMsg]
+        saveChatSession(newHistory, data.place_info?.name || destination)
+        return newHistory
+      })
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I failed to connect to the backend.' }])
     } finally {
@@ -367,9 +369,11 @@ export default function App() {
       })
       const data = await res.json()
       const aiMsg = { role: 'ai', content: data.response }
-      const newHistory = [...chatHistory, userMsg, aiMsg]
-      setChatHistory(newHistory)
-      saveChatSession(newHistory, destination)
+      setChatHistory(prev => {
+        const newHistory = [...prev, aiMsg]
+        saveChatSession(newHistory, destination)
+        return newHistory
+      })
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews.' }])
     } finally {
@@ -388,9 +392,11 @@ export default function App() {
       })
       const data = await res.json()
       const aiMsg = { role: 'ai', content: data.response }
-      const newHistory = [...chatHistory, userMsg, aiMsg]
-      setChatHistory(newHistory)
-      saveChatSession(newHistory, destination)
+      setChatHistory(prev => {
+        const newHistory = [...prev, aiMsg]
+        saveChatSession(newHistory, destination)
+        return newHistory
+      })
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this hotel.' }])
     } finally {
@@ -409,9 +415,11 @@ export default function App() {
       })
       const data = await res.json()
       const aiMsg = { role: 'ai', content: data.response }
-      const newHistory = [...chatHistory, userMsg, aiMsg]
-      setChatHistory(newHistory)
-      saveChatSession(newHistory, destination)
+      setChatHistory(prev => {
+        const newHistory = [...prev, aiMsg]
+        saveChatSession(newHistory, destination)
+        return newHistory
+      })
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this attraction.' }])
     } finally {
@@ -430,9 +438,11 @@ export default function App() {
       })
       const data = await res.json()
       const aiMsg = { role: 'ai', content: data.response }
-      const newHistory = [...chatHistory, userMsg, aiMsg]
-      setChatHistory(newHistory)
-      saveChatSession(newHistory, destination)
+      setChatHistory(prev => {
+        const newHistory = [...prev, aiMsg]
+        saveChatSession(newHistory, destination)
+        return newHistory
+      })
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to fetch reviews for this restaurant.' }])
     } finally {

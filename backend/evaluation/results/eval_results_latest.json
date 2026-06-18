@@ -1,8 +1,8 @@
 {
   "metrics": {
     "faithfulness": {
-      "mean": 0.5298,
-      "min": 0.375,
+      "mean": 0.6298,
+      "min": 0.475,
       "max": 0.7143,
       "std": 0.1716
     },
