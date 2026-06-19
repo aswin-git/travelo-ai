@@ -290,54 +290,151 @@ export default function App() {
         crowd_precision: crowdAware ? crowdPrecision : null
       }
 
-      const res = await fetch(`${API}/chat`, {
+      const res = await fetch(`${API}/chat/stream`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(payload)
       })
-      const data = await res.json()
 
-      if (data.missing_info && data.missing_info.length > 0) {
-        setMissingInfo(data.missing_info)
-        setLastMessage(text)
-        setLoading(false)
-        return
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
       }
 
-      let aiContent = data.response || 'I\'ve updated your recommendations on the right.'
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let streamedText = ''
+      let firstTokenReceived = false
 
-      if (data.hotels && data.hotels.length > 0) {
-        setLatestData({ type: 'hotel_recommendation', results: data.hotels })
-        setActiveTab('Hotels')
-      } else if (data.attractions && data.attractions.length > 0) {
-        setLatestData({ type: 'attraction_recommendation', results: data.attractions })
-        setActiveTab('Places')
-      } else if (data.restaurants && data.restaurants.length > 0) {
-        setLatestData({ type: 'restaurant_recommendation', results: data.restaurants })
-        setActiveTab('Food')
-      } else if (data.events && data.events.length > 0) {
-        setLatestData({ type: 'event_recommendation', results: data.events })
-        setActiveTab('Events')
-      } else if (data.directions && data.directions.length > 0) {
-        setLatestData({ type: 'directions_recommendation', results: data.directions })
-        setActiveTab('Directions')
-      } else if (data.itinerary) {
-        setItineraryData(data.itinerary)
-        setActiveDay(1)
-        setActiveTab('Itinerary')
-      }
-
-      if (data.place_info) {
-        setDestination(data.place_info.name)
-      }
-
-      const aiMsg = { role: 'ai', content: aiContent, show_review_prompt: data.show_review_prompt, show_attractions_prompt: data.show_attractions_prompt, show_restaurants_prompt: data.show_restaurants_prompt, show_events_prompt: data.show_events_prompt }
+      // Add placeholder AI message that we'll update with streamed tokens
+      const aiMsgIndex = { current: -1 }
       setChatHistory(prev => {
-        const newHistory = [...prev, aiMsg]
-        saveChatSession(newHistory, data.place_info?.name || destination)
-        return newHistory
+        aiMsgIndex.current = prev.length
+        return [...prev, { role: 'ai', content: '', streaming: true }]
       })
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Parse SSE events from buffer
+        const lines = buffer.split('\n')
+        buffer = ''
+
+        let eventType = 'token'
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i]
+
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7).trim()
+          } else if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6)
+            try {
+              const eventData = JSON.parse(jsonStr)
+
+              if (eventType === 'token') {
+                if (!firstTokenReceived) {
+                  firstTokenReceived = true
+                  setLoading(false)
+                }
+                streamedText += eventData.text || ''
+                // Update the AI message content with accumulated text
+                const currentText = streamedText
+                setChatHistory(prev => {
+                  const updated = [...prev]
+                  if (aiMsgIndex.current >= 0 && updated[aiMsgIndex.current]) {
+                    updated[aiMsgIndex.current] = { ...updated[aiMsgIndex.current], content: currentText }
+                  }
+                  return updated
+                })
+              } else if (eventType === 'done') {
+                // Process structured data from done event
+                const data = eventData
+
+                if (data.missing_info && data.missing_info.length > 0) {
+                  // Remove the streaming AI message and show missing info modal
+                  setChatHistory(prev => prev.filter((_, idx) => idx !== aiMsgIndex.current))
+                  setMissingInfo(data.missing_info)
+                  setLastMessage(text)
+                  setLoading(false)
+                  return
+                }
+
+                // Use full response text from done event (may differ from streamed if non-streamable)
+                const finalText = data.response || streamedText || "I've updated your recommendations on the right."
+
+                if (data.hotels && data.hotels.length > 0) {
+                  setLatestData({ type: 'hotel_recommendation', results: data.hotels })
+                  setActiveTab('Hotels')
+                } else if (data.attractions && data.attractions.length > 0) {
+                  setLatestData({ type: 'attraction_recommendation', results: data.attractions })
+                  setActiveTab('Places')
+                } else if (data.restaurants && data.restaurants.length > 0) {
+                  setLatestData({ type: 'restaurant_recommendation', results: data.restaurants })
+                  setActiveTab('Food')
+                } else if (data.events && data.events.length > 0) {
+                  setLatestData({ type: 'event_recommendation', results: data.events })
+                  setActiveTab('Events')
+                } else if (data.directions && data.directions.length > 0) {
+                  setLatestData({ type: 'directions_recommendation', results: data.directions })
+                  setActiveTab('Directions')
+                } else if (data.itinerary) {
+                  setItineraryData(data.itinerary)
+                  setActiveDay(1)
+                  setActiveTab('Itinerary')
+                }
+
+                if (data.place_info) {
+                  setDestination(data.place_info.name)
+                }
+
+                // Finalize the AI message with full text and action prompts
+                setChatHistory(prev => {
+                  const updated = [...prev]
+                  if (aiMsgIndex.current >= 0 && updated[aiMsgIndex.current]) {
+                    updated[aiMsgIndex.current] = {
+                      role: 'ai',
+                      content: finalText,
+                      streaming: false,
+                      show_review_prompt: data.show_review_prompt,
+                      show_attractions_prompt: data.show_attractions_prompt,
+                      show_restaurants_prompt: data.show_restaurants_prompt,
+                      show_events_prompt: data.show_events_prompt,
+                    }
+                  }
+                  const newHistory = [...updated]
+                  saveChatSession(newHistory, data.place_info?.name || destination)
+                  return newHistory
+                })
+              } else if (eventType === 'error') {
+                setChatHistory(prev => {
+                  const updated = [...prev]
+                  if (aiMsgIndex.current >= 0 && updated[aiMsgIndex.current]) {
+                    updated[aiMsgIndex.current] = { role: 'ai', content: eventData.message || 'Something went wrong.' }
+                  }
+                  return updated
+                })
+              }
+            } catch {
+              // Incomplete JSON, put line back in buffer
+              buffer = lines.slice(i).join('\n')
+              break
+            }
+            eventType = 'token' // reset for next event
+          } else if (line === '') {
+            // Empty line = end of event, reset
+            eventType = 'token'
+          } else {
+            // Incomplete line, keep in buffer
+            buffer = line + '\n' + lines.slice(i + 1).join('\n')
+            break
+          }
+        }
+      }
     } catch (err) {
+      console.error('Stream error:', err)
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I failed to connect to the backend.' }])
     } finally {
       setLoading(false)
@@ -687,7 +784,7 @@ export default function App() {
               {chatHistory.map((msg, idx) => (
                 <div key={idx} className={`message ${msg.role}`}>
                   {msg.role === 'ai' ? (
-                    <div className="markdown-content">
+                    <div className={`markdown-content${msg.streaming ? ' streaming-cursor' : ''}`}>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                     </div>
                   ) : (

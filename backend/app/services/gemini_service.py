@@ -79,6 +79,60 @@ User Query: {query}"""
         logger.error(f"Gemini generation error in chat_with_context: {e}", exc_info=True)
         return "I'm sorry, I encountered an error while processing your request."
 
+def _build_chat_prompt(query: str, context: str, history: list = None) -> str:
+    """Builds the chat prompt (shared between streaming and non-streaming)."""
+    history_block = ""
+    if history:
+        formatted = "\n".join(
+            f"{'User' if h['role'] == 'user' else 'Assistant'}: {h['content']}"
+            for h in history[-10:]
+        )
+        history_block = f"\n    Previous conversation:\n    {formatted}\n"
+
+    return f"""You are an expert AI travel assistant. Answer the user's query about a tourist place based on the provided context.
+
+RESPONSE MODE — CHOOSE ONE:
+
+**MODE A – SPECIFIC QUESTION** (e.g. "is X good for hindi speakers?", "is X safe for solo travelers?", "what food should I try in X?", "can I visit X in monsoon?"):
+- Answer the question DIRECTLY — do NOT include a generic Overview or Weather section
+- Use bullet points (- ) for easy scanning, NOT paragraphs
+- Use **bold** for key facts and place names
+- Keep it focused: only include information that answers the question
+- Use a single relevant emoji header if needed (e.g. 💬 Language, 🛡️ Safety, 🍽️ Food)
+- Be concise but thorough — cover the question fully, then stop
+
+**MODE B – GENERAL PLACE QUERY** (e.g. "tell me about X", "I want to visit X", or very broad queries):
+- Structure your response with clear markdown sections using ## headers
+- Use bullet points (- ) for lists of items
+- Use **bold** for important names, places, and key facts
+- Use emojis to make headers engaging (e.g. 🌍 Overview, 🌤️ Weather, 🍽️ Food, 🏛️ Must Visit)
+- NEVER dump information as a single paragraph
+- Include relevant sections from: 🌍 Overview, ✨ Highlights, 🌤️ Current Weather, 🏛️ Must-Visit Spots, 🍽️ Local Cuisine, 📅 Best Time to Visit, 💡 Travel Tips, 🏰 History & Culture
+- Only include sections for which you have actual information. Don't fabricate sections with no data.
+
+GENERAL RULES (both modes):
+- Use the conversation history (if any) to understand references like "there", "that place", etc.
+- Keep each point focused and informative
+- NEVER dump information as a wall of text — always use bullet points or short lines
+{history_block}
+Context: {context}
+
+User Query: {query}"""
+
+async def stream_generate(prompt: str):
+    """Generic async generator that streams text chunks from Gemini.
+    
+    Yields text strings as they arrive from the model.
+    """
+    try:
+        response = await model.generate_content_async(prompt, stream=True)
+        async for chunk in response:
+            if chunk.text:
+                yield chunk.text
+    except Exception as e:
+        logger.error(f"Gemini streaming error: {e}", exc_info=True)
+        yield "I'm sorry, I encountered an error while processing your request."
+
 async def summarize_reviews(reviews_text: str, subject_name: str) -> str:
     """Uses Gemini asynchronously to summarize a list of reviews into a concise user experience summary."""
     prompt = f"""
@@ -121,7 +175,9 @@ async def synthesize_place_knowledge(place_name: str, raw_context: str) -> dict:
             prompt,
             generation_config={"response_mime_type": "application/json"}
         )
-        return json.loads(response.text.strip())
+        decoder = json.JSONDecoder()
+        raw, _ = decoder.raw_decode(response.text.strip())
+        return raw
     except Exception as e:
         logger.error(f"Gemini generation error in synthesize_place_knowledge for '{place_name}': {e}", exc_info=True)
         return {
@@ -161,7 +217,9 @@ async def discover_and_recommend(user_query: str, retrieved_places: str) -> dict
             prompt,
             generation_config={"response_mime_type": "application/json"}
         )
-        return json.loads(response.text.strip())
+        decoder = json.JSONDecoder()
+        raw, _ = decoder.raw_decode(response.text.strip())
+        return raw
     except Exception as e:
         logger.error(f"Gemini generation error in discover_and_recommend: {e}", exc_info=True)
         return {

@@ -1,5 +1,6 @@
 # chat_routes.py
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.place_model import (
@@ -7,12 +8,13 @@ from ..models.place_model import (
     ReviewSummary, Attraction, AttractionResult, Restaurant, RestaurantResult,
     Event, EventResult,
 )
-from ..services.graph_orchestrator import run_travel_graph
+from ..services.graph_orchestrator import run_travel_graph, run_travel_graph_stream
 from ..services.review_service import get_and_summarize_reviews, save_summary_to_db
 from ..services.place_service import get_place_by_name
 from ..auth.dependencies import get_optional_user
 from ..models.user_model import User
 from ..utils.logger import get_logger
+import json as _json
 
 logger = get_logger(__name__)
 
@@ -44,6 +46,43 @@ async def chat_endpoint(
     except Exception as e:
         logger.error(f"Unhandled error in chat endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/chat/stream")
+async def chat_stream_endpoint(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_optional_user),
+):
+    """SSE streaming chat endpoint — streams AI text tokens in real-time.
+    
+    Emits SSE events:
+        event: token   → {"text": "chunk..."}
+        event: done    → {full response JSON with structured data}
+        event: error   → {"message": "..."}
+    """
+    logger.info(f"Incoming stream request: {request.message}")
+
+    async def sse_generator():
+        try:
+            async for event in run_travel_graph_stream(request, db, user=user):
+                event_type = event.get("event", "token")
+                data = _json.dumps(event.get("data", {}), default=str)
+                yield f"event: {event_type}\ndata: {data}\n\n"
+        except Exception as e:
+            logger.error(f"SSE stream error: {e}", exc_info=True)
+            error_data = _json.dumps({"message": "Stream error"})
+            yield f"event: error\ndata: {error_data}\n\n"
+
+    return StreamingResponse(
+        sse_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        },
+    )
 
 
 # FIX 3: Changed from POST to GET — this is a read-only fetch operation

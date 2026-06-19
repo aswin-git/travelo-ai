@@ -233,8 +233,8 @@ User message: {message}"""
         }
 
     intent = parsed.get("intent", "place_info")
-    destination = parsed.get("destination")
-    hotel_name = parsed.get("hotel_name")
+    destination = parsed.get("destination") or state.get("destination")
+    hotel_name = parsed.get("hotel_name") or state.get("hotel_name")
     place_type = parsed.get("place_type", "poi")
 
     logger.info(
@@ -942,21 +942,23 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
         except Exception as e:
             logger.warning(f"Failed to fetch saved items: {e}")
 
-    # ── Phase 1: Fetch candidate places ────────────────────────────────────
-    attractions_raw = []
-    restaurants_raw = []
+    # ── Phase 1: Fetch candidate places (PARALLEL) ──────────────────────────
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    attractions_future = loop.run_in_executor(None, lambda: search_attractions(destination) or [])
+    restaurants_future = loop.run_in_executor(None, lambda: search_restaurants(destination) or [])
 
     try:
-        attractions_raw = search_attractions(destination) or []
-        logger.info(f"Fetched {len(attractions_raw)} attractions for {destination}")
+        attractions_raw, restaurants_raw = await asyncio.gather(
+            attractions_future, restaurants_future
+        )
     except Exception as e:
-        logger.warning(f"Attractions fetch failed: {e}")
+        logger.warning(f"Parallel fetch failed, falling back: {e}")
+        attractions_raw = []
+        restaurants_raw = []
 
-    try:
-        restaurants_raw = search_restaurants(destination) or []
-        logger.info(f"Fetched {len(restaurants_raw)} restaurants for {destination}")
-    except Exception as e:
-        logger.warning(f"Restaurants fetch failed: {e}")
+    logger.info(f"Fetched {len(attractions_raw)} attractions + {len(restaurants_raw)} restaurants for {destination} (parallel)")
 
     # Inject saved attractions/restaurants into candidate pools (at front, so they're prioritized)
     saved_attr_names = {a["name"].lower() for a in saved_attractions}
@@ -979,15 +981,17 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     dest_lat = dest_anchor["latitude"] if dest_anchor else None
     dest_lon = dest_anchor["longitude"] if dest_anchor else None
 
-    logger.info("Geocoding attractions...")
-    geocoded_attractions = batch_geocode(
-        attractions_raw[:10], destination, dest_lat=dest_lat, dest_lon=dest_lon
+    logger.info("Geocoding attractions + restaurants (parallel)...")
+    geo_attr_future = loop.run_in_executor(
+        None, lambda: batch_geocode(attractions_raw[:10], destination, dest_lat=dest_lat, dest_lon=dest_lon)
     )
-
-    logger.info("Geocoding restaurants...")
-    geocoded_restaurants = batch_geocode(
-        restaurants_raw[:8], destination, dest_lat=dest_lat, dest_lon=dest_lon
+    geo_rest_future = loop.run_in_executor(
+        None, lambda: batch_geocode(restaurants_raw[:8], destination, dest_lat=dest_lat, dest_lon=dest_lon)
     )
+    geocoded_attractions, geocoded_restaurants = await asyncio.gather(
+        geo_attr_future, geo_rest_future
+    )
+    logger.info(f"Geocoded {len(geocoded_attractions)} attractions + {len(geocoded_restaurants)} restaurants")
 
     # Geocode the origin (user's starting location or destination center)
     # Handle the __skip__ sentinel from the frontend's Skip button
@@ -1538,3 +1542,244 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
             output[key] = result[key]
 
     return output
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  PUBLIC ENTRY POINT — STREAMING (SSE)
+# ═══════════════════════════════════════════════════════════════════════════
+# Intents where we stream the Gemini text response token-by-token
+_STREAMABLE_INTENTS = {"place_info", "travel_question", "general_chat", "destination_discovery"}
+
+async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
+    """
+    SSE streaming entry point. Yields dicts for the SSE endpoint to format.
+
+    Yields:
+        {"event": "token", "data": {"text": "chunk..."}}
+        {"event": "done",  "data": {full ChatResponse-like dict}}
+        {"event": "error", "data": {"message": "..."}}
+
+    For streamable intents (place_info, travel_question, general_chat, destination_discovery):
+        Runs classify_intent → prepares context → streams Gemini text → emits done with metadata.
+    For data-heavy intents (hotels, itinerary, etc.):
+        Runs the full graph normally and emits a single done event.
+    """
+    from ..services.gemini_service import stream_generate, _build_chat_prompt
+
+    thread_id = request.session_id or uuid4().hex
+    user_id = str(user.id) if user else None
+    config = {"configurable": {"thread_id": thread_id, "db": db, "user_id": user_id}}
+
+    initial_state: TravelState = {
+        "message": request.message,
+        "budget": request.budget,
+        "traveler_type": request.traveler_type,
+        "cuisine": request.cuisine,
+        "adults": request.adults,
+        "check_in": request.check_in,
+        "check_out": request.check_out,
+        "start_location": request.start_location,
+        "end_location": request.end_location,
+        "travel_mode": request.travel_mode,
+        "num_days": request.num_days,
+        "pacing": request.pacing,
+        "meal_preference": request.meal_preference,
+        "crowd_aware": request.crowd_aware,
+        "crowd_precision": request.crowd_precision,
+    }
+
+    logger.info(f"[STREAM] Running with thread_id={thread_id}, user_id={user_id}")
+
+    # ── Phase 1: Run manage_history + classify_intent to get intent ─────────
+    # We manually invoke just these two nodes through a partial graph run,
+    # then decide whether to stream or run the full graph.
+
+    # Load previous state from checkpointer (since we are manually running nodes)
+    try:
+        saved_state = travel_graph.get_state(config)
+        if saved_state and hasattr(saved_state, "values") and saved_state.values:
+            for key in ["conversation_history", "destination", "hotel_name"]:
+                if saved_state.values.get(key) is not None:
+                    initial_state[key] = saved_state.values[key]
+    except Exception as e:
+        logger.warning(f"Failed to load previous state for stream: {e}")
+
+    # Run manage_history
+    history_state = initial_state.copy()
+    history_result = await manage_history(history_state)
+    state_after_history = {**history_state, **history_result}
+
+    # Run classify_intent
+    intent_result = await classify_intent(state_after_history)
+    state_after_intent = {**state_after_history, **intent_result}
+
+    intent = state_after_intent.get("intent", "place_info")
+    logger.info(f"[STREAM] Intent: {intent}")
+
+    # ── Check for errors or missing info from classify_intent ───────────────
+    if state_after_intent.get("error"):
+        yield {"event": "done", "data": {
+            "response": state_after_intent["error"],
+            "source": state_after_intent.get("source", "system"),
+            "missing_info": state_after_intent.get("missing_info"),
+        }}
+        return
+
+    if state_after_intent.get("missing_info"):
+        yield {"event": "done", "data": {
+            "response": state_after_intent.get("error", "I need a few more details."),
+            "source": "system",
+            "missing_info": state_after_intent["missing_info"],
+        }}
+        return
+
+    # ── Phase 2: Route based on intent ─────────────────────────────────────
+    if intent not in _STREAMABLE_INTENTS:
+        # Data-heavy intent: run full graph normally, emit done
+        logger.info(f"[STREAM] Non-streamable intent '{intent}', running full graph")
+        result = await travel_graph.ainvoke(initial_state, config)
+
+        output = {}
+        if result.get("error"):
+            output["response"] = result["error"]
+            output["source"] = result.get("source", "system")
+        else:
+            output["response"] = result.get("response_text", "")
+            output["source"] = result.get("source", "unknown")
+
+        for key in (
+            "place_info", "hotels", "attractions", "restaurants",
+            "events", "directions", "itinerary",
+            "show_review_prompt", "show_attractions_prompt",
+            "show_restaurants_prompt", "show_events_prompt",
+            "missing_info",
+        ):
+            if result.get(key) is not None:
+                output[key] = result[key]
+
+        yield {"event": "done", "data": output}
+        return
+
+    # ── Phase 3: Streamable intent — prepare context, then stream ──────────
+    destination = state_after_intent.get("destination", "")
+    history = state_after_intent.get("conversation_history", [])
+    effective_query = state_after_intent.get("effective_query") or request.message
+    prompt = None
+    extra_data = {}  # Non-text data to include in done event
+
+    if intent == "place_info":
+        # Fetch RAG context (non-streaming)
+        rag_result = await process_chat_query(db, effective_query, destination, history=history)
+        context = rag_result.get("response", "") if rag_result else ""
+
+        if rag_result and rag_result.get("place_info"):
+            try:
+                place_info = PlaceResponse.model_validate(rag_result["place_info"]).model_dump()
+                extra_data["place_info"] = place_info
+                place_type = state_after_intent.get("place_type", "poi")
+                extra_data["show_review_prompt"] = place_type == "poi"
+                extra_data["show_attractions_prompt"] = place_type == "city"
+                extra_data["show_restaurants_prompt"] = place_type == "city"
+                extra_data["show_events_prompt"] = place_type == "city"
+            except Exception:
+                pass
+
+        prompt = _build_chat_prompt(effective_query, context, history=history)
+
+    elif intent == "travel_question":
+        # Fetch RAG context
+        rag_context = ""
+        if destination:
+            try:
+                rag_result = await process_chat_query(db, effective_query, destination, history=history)
+                if rag_result and rag_result.get("response"):
+                    rag_context = rag_result["response"][:2000]
+            except Exception as e:
+                logger.warning(f"RAG context fetch failed for stream: {e}")
+
+        history_block = ""
+        if history and len(history) > 1:
+            history_text = _format_history(history[:-1])
+            history_block = f"\nPrevious conversation:\n{history_text}\n"
+
+        prompt = f"""You are Travelo AI, an expert travel assistant. The user is asking a SPECIFIC QUESTION about travel.
+
+Your job is to ANSWER THE QUESTION DIRECTLY. Do NOT generate an itinerary. Do NOT give a generic overview of the destination. Focus ONLY on answering what the user asked.
+
+RULES:
+- Answer the user's specific question concisely and helpfully
+- Use bullet points (- ) for easy scanning
+- Use **bold** for key facts
+- If the answer is yes/no, lead with a clear yes or no, then explain
+- Include practical tips and specifics (distances, durations, costs, seasons, etc.)
+- If you're unsure, say so honestly rather than making things up
+- Keep the response focused — don't add unrelated tourist info
+- Use a relevant emoji header (e.g. 🏍️ Bike Trip, ⏱️ Duration, 💰 Budget, 🛡️ Safety)
+{history_block}
+Background context about the destination (use ONLY if relevant to answering the question):
+{rag_context if rag_context else 'No specific context available — use your general knowledge.'}
+
+User's question: {effective_query}"""
+
+    elif intent == "general_chat":
+        history_text = _format_history(history[:-1]) if len(history) > 1 else ""
+        history_block = f"Previous conversation:\n{history_text}\n" if history_text else ""
+
+        prompt = f"""You are Travelo AI, a friendly and enthusiastic travel assistant.
+Respond naturally to the user's message in a warm, conversational tone.
+Keep your response concise (1-3 sentences).
+If they greet you, greet them back and let them know you can help with:
+- Exploring destinations and places
+- Finding hotels, restaurants, and attractions
+- Planning travel itineraries
+- Getting directions between places
+
+Do NOT make up travel information. Just be friendly and helpful.
+
+{history_block}User message: {request.message}"""
+
+    elif intent == "destination_discovery":
+        from ..services.rag_service import semantic_place_discovery
+        # For discovery, run the full pipeline non-streaming (it uses JSON parsing)
+        response_text = await semantic_place_discovery(request.message)
+        yield {"event": "done", "data": {
+            "response": response_text,
+            "source": "semantic_discovery",
+        }}
+        return
+
+    if not prompt:
+        yield {"event": "error", "data": {"message": "Failed to build prompt."}}
+        return
+
+    # ── Phase 4: Stream Gemini tokens ──────────────────────────────────────
+    full_text = ""
+    async for chunk in stream_generate(prompt):
+        full_text += chunk
+        yield {"event": "token", "data": {"text": chunk}}
+
+    # ── Phase 5: Update conversation history in the checkpointer ───────────
+    # Append assistant response to history for multi-turn memory
+    history.append({"role": "assistant", "content": full_text})
+    if len(history) > MAX_HISTORY_MESSAGES:
+        history = history[-MAX_HISTORY_MESSAGES:]
+
+    # Save state to checkpointer for multi-turn continuity
+    try:
+        save_state = {
+            **state_after_intent,
+            "conversation_history": history,
+            "response_text": full_text,
+        }
+        # Use the official LangGraph API to update state
+        travel_graph.update_state(config, save_state)
+    except Exception as e:
+        logger.warning(f"[STREAM] Failed to save checkpoint: {e}")
+
+    # ── Emit done event with full response + structured data ───────────────
+    done_data = {
+        "response": full_text,
+        "source": f"stream_{intent}",
+        **extra_data,
+    }
+    yield {"event": "done", "data": done_data}
