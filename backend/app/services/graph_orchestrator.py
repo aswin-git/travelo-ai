@@ -174,15 +174,16 @@ async def classify_intent(state: TravelState) -> dict:
     intent_prompt = f"""Analyze the user's travel-related message and return a JSON object with these fields:
 - "intent": one of:
     - "general_chat" (greetings like hi/hello/hey, small talk, thank you, goodbye, how are you, or any casual non-travel-specific conversation)
+    - "travel_question" (user asking a SPECIFIC QUESTION about travel — feasibility, logistics, safety, language, duration, transport mode, budget estimates, best season, visa, packing tips, or any yes/no/how/can-I type question about a trip or destination. Examples: "can I complete Maharashtra in 2 weeks on a bike?", "is Ladakh safe for solo female travelers?", "what language do they speak in Goa?", "how many days do I need for Kerala?", "is monsoon a good time to visit Munnar?", "can I do Rajasthan on a budget of 20k?")
     - "hotel_search" (user asking for general hotels/accommodation in a city)
     - "specific_hotel_info" (user asking about a specific hotel by name)
     - "nearby_attractions" (user asking to see nearby places, top sights, or attractions for a city)
     - "restaurant_search" (user asking for places to eat, restaurants, or food in a city)
     - "event_search" (user asking for things happening, events, concerts, or festivals in a city)
-    - "place_info" (user asking about a tourist place, destination, weather, things to do)
+    - "place_info" (user asking BROADLY about a tourist place — "tell me about X", "I want to visit X", or wanting a general overview/summary of a destination. This is NOT for specific questions — use travel_question for those)
     - "destination_discovery" (user describing their preferences/vibes without naming a specific destination, e.g. 'I want to go to a beach with cliffs')
     - "directions_search" (user asking for map directions, routes, or how to get from one place to another)
-    - "itinerary_search" (user asking to plan or generate a multi-day travel itinerary, trip plan, or schedule for a destination)
+    - "itinerary_search" (user EXPLICITLY asking to plan, generate, or create a multi-day travel itinerary, trip plan, or schedule. Must use words like 'plan', 'itinerary', 'schedule', 'create a trip'. Do NOT use this for questions about trip feasibility or duration — use travel_question for those)
 - "destination": the city or place name mentioned, or resolved from conversation history (or null)
 - "hotel_name": the specific hotel name if mentioned (or null)
 - "place_type": one of ["city", "poi"] - "city" if it's a broad region/town (e.g. Kochi, Bangalore), "poi" if it's a specific point of interest (e.g. Fort Kochi Beach).
@@ -717,6 +718,66 @@ async def handle_place_info(state: TravelState, config: RunnableConfig) -> dict:
         "show_restaurants_prompt": has_place and place_type == "city",
         "show_events_prompt": has_place and place_type == "city",
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  NODE: handle_travel_question
+# ═══════════════════════════════════════════════════════════════════════════
+async def handle_travel_question(state: TravelState, config: RunnableConfig) -> dict:
+    """Handles direct travel questions (feasibility, logistics, tips, etc.)
+    by fetching relevant context and answering the specific question."""
+    db: Session = config["configurable"]["db"]
+    destination = state.get("destination", "")
+    history = state.get("conversation_history")
+    effective_query = state.get("effective_query") or state["message"]
+    logger.info(f"handle_travel_question: {effective_query} (destination: {destination})")
+
+    # Fetch RAG context if we have a destination
+    rag_context = ""
+    if destination:
+        try:
+            rag_result = await process_chat_query(db, effective_query, destination, history=history)
+            if rag_result.get("response"):
+                rag_context = rag_result["response"][:2000]
+        except Exception as e:
+            logger.warning(f"RAG context fetch failed for travel question: {e}")
+
+    history_block = ""
+    if history and len(history) > 1:
+        history_text = _format_history(history[:-1])
+        history_block = f"\nPrevious conversation:\n{history_text}\n"
+
+    question_prompt = f"""You are Travelo AI, an expert travel assistant. The user is asking a SPECIFIC QUESTION about travel.
+
+Your job is to ANSWER THE QUESTION DIRECTLY. Do NOT generate an itinerary. Do NOT give a generic overview of the destination. Focus ONLY on answering what the user asked.
+
+RULES:
+- Answer the user's specific question concisely and helpfully
+- Use bullet points (- ) for easy scanning
+- Use **bold** for key facts
+- If the answer is yes/no, lead with a clear yes or no, then explain
+- Include practical tips and specifics (distances, durations, costs, seasons, etc.)
+- If you're unsure, say so honestly rather than making things up
+- Keep the response focused — don't add unrelated tourist info
+- Use a relevant emoji header (e.g. 🏍️ Bike Trip, ⏱️ Duration, 💰 Budget, 🛡️ Safety)
+{history_block}
+Background context about the destination (use ONLY if relevant to answering the question):
+{rag_context if rag_context else 'No specific context available — use your general knowledge.'}
+
+User's question: {effective_query}"""
+
+    try:
+        response = await model.generate_content_async(question_prompt)
+        return {
+            "response_text": response.text.strip(),
+            "source": "travel_question",
+        }
+    except Exception as e:
+        logger.error(f"Travel question response failed: {e}", exc_info=True)
+        return {
+            "response_text": "I'm sorry, I had trouble answering your question. Could you rephrase it?",
+            "source": "travel_question",
+        }
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1312,6 +1373,7 @@ def route_by_intent(state: TravelState) -> str:
 
     route_map = {
         "general_chat": "handle_general_chat",
+        "travel_question": "handle_travel_question",
         "specific_hotel_info": "handle_specific_hotel",
         "hotel_search": "handle_hotel_search",
         "nearby_attractions": "handle_attractions",
@@ -1352,6 +1414,7 @@ def _build_travel_graph():
     graph.add_node("handle_directions", handle_directions)
     graph.add_node("handle_itinerary", handle_itinerary)
     graph.add_node("handle_general_chat", handle_general_chat)
+    graph.add_node("handle_travel_question", handle_travel_question)
     graph.add_node("save_response", save_response)
 
     # Entry: START → manage_history → classify_intent
@@ -1373,6 +1436,7 @@ def _build_travel_graph():
             "handle_directions": "handle_directions",
             "handle_itinerary": "handle_itinerary",
             "handle_general_chat": "handle_general_chat",
+            "handle_travel_question": "handle_travel_question",
             "save_response": "save_response",  # error path
         },
     )
@@ -1397,6 +1461,7 @@ def _build_travel_graph():
     graph.add_edge("handle_directions", "save_response")
     graph.add_edge("handle_itinerary", "save_response")
     graph.add_edge("handle_general_chat", "save_response")
+    graph.add_edge("handle_travel_question", "save_response")
     graph.add_edge("save_response", END)
 
     # Compile with MemorySaver for multi-turn conversation memory
