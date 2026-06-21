@@ -2,6 +2,7 @@ from serpapi import GoogleSearch
 from typing import List, Dict, Any, Optional
 from datetime import date, timedelta
 from ..config import settings
+from .cache_service import cached_serpapi_call, TTL_1H, TTL_6H
 from sqlalchemy.orm import Session
 from ..models.place_model import Hotel
 import uuid
@@ -77,8 +78,7 @@ def search_hotels(
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("hotels", params, ttl=TTL_1H)
         
         properties = results.get("properties", [])
         
@@ -169,8 +169,7 @@ def get_hotel_reviews(property_token: str) -> List[str]:
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("hotel_reviews", params, ttl=TTL_6H)
         reviews_data = results.get("reviews", [])
         
         # Extract the review text from the top reviews

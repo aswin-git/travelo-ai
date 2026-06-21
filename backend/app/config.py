@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str = ""
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
+    REDIS_URL: str = ""
     
     class Config:
         env_file = ".env"

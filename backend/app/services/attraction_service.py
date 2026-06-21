@@ -1,6 +1,7 @@
 from serpapi import GoogleSearch
 from typing import List, Dict, Any, Optional
 from ..config import settings
+from .cache_service import cached_serpapi_call, TTL_6H
 from sqlalchemy.orm import Session
 from ..models.place_model import Attraction
 import uuid
@@ -60,8 +61,7 @@ def search_attractions(destination: str) -> List[Dict[str, Any]]:
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("attractions", params, ttl=TTL_6H)
         
         locals_results = results.get("local_results", [])
         
@@ -100,8 +100,7 @@ def get_attraction_reviews(data_id: str) -> List[str]:
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("attraction_reviews", params, ttl=TTL_6H)
         reviews_data = results.get("reviews", [])
         
         # Extract the review text from the top reviews

@@ -266,9 +266,11 @@ export default function App() {
     }
   }
 
-  async function sendDirectMessage(text) {
-    const userMsg = { role: 'user', content: text }
-    setChatHistory(prev => [...prev, userMsg])
+  async function sendDirectMessage(text, skipAppend = false) {
+    if (!skipAppend) {
+      const userMsg = { role: 'user', content: text }
+      setChatHistory(prev => [...prev, userMsg])
+    }
     setLoading(true)
     try {
       const payload = {
@@ -287,7 +289,10 @@ export default function App() {
         pacing: pacing || null,
         meal_preference: mealPreference || null,
         crowd_aware: crowdAware,
-        crowd_precision: crowdAware ? crowdPrecision : null
+        crowd_precision: crowdAware ? crowdPrecision : null,
+        conversation_history: chatHistory
+          .filter(m => m.content)
+          .map(m => ({ role: m.role === 'ai' ? 'assistant' : m.role, content: m.content }))
       }
 
       const res = await fetch(`${API}/chat/stream`, {
@@ -438,6 +443,20 @@ export default function App() {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I failed to connect to the backend.' }])
     } finally {
       setLoading(false)
+      // Reset per-query preferences so next search prompts fresh
+      setBudget('')
+      setTravelerType('')
+      setCuisine('')
+      setAdults(2)
+      setCheckIn('')
+      setCheckOut('')
+      setStartLocation('')
+      setEndLocation('')
+      setTravelMode('')
+      setNumDays(3)
+      setPacing('')
+      setMealPreference('')
+      setCrowdAware(null)
     }
   }
 
@@ -452,7 +471,7 @@ export default function App() {
   const handleMissingInfoSubmit = (e) => {
     e.preventDefault()
     setMissingInfo(null)
-    sendDirectMessage(lastMessage)
+    sendDirectMessage(lastMessage, true) // skip appending user message again
   }
 
   const handleReviewRequest = async (placeName) => {
@@ -562,6 +581,11 @@ export default function App() {
     return <LandingPage onGetStarted={() => setShowLogin(true)} />
   }
 
+  const todayDateStr = new Date().toISOString().split('T')[0]
+  const tomorrowDate = new Date()
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+  const tomorrowDateStr = tomorrowDate.toISOString().split('T')[0]
+
   return (
     <div className="app-container">
       {/* Global Background Orbs */}
@@ -587,10 +611,26 @@ export default function App() {
               <form onSubmit={handleMissingInfoSubmit} className="missing-info-form">
                 {missingInfo.includes('dates') && (
                   <div className="form-group">
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => { setCheckIn(todayDateStr); setCheckOut(tomorrowDateStr); }}
+                        style={{ padding: '6px 12px', fontSize: '0.85rem', borderRadius: '4px', background: 'var(--surface-color)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                      >
+                        Today & Tomorrow
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => { setCheckIn(tomorrowDateStr); const next = new Date(tomorrowDate); next.setDate(next.getDate() + 1); setCheckOut(next.toISOString().split('T')[0]); }}
+                        style={{ padding: '6px 12px', fontSize: '0.85rem', borderRadius: '4px', background: 'var(--surface-color)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                      >
+                        Tomorrow
+                      </button>
+                    </div>
                     <label>Check-in Date</label>
-                    <input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} required />
+                    <input type="date" value={checkIn} min={todayDateStr} onChange={e => setCheckIn(e.target.value)} required />
                     <label>Check-out Date</label>
-                    <input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} required />
+                    <input type="date" value={checkOut} min={checkIn || todayDateStr} onChange={e => setCheckOut(e.target.value)} required />
                   </div>
                 )}
                 {missingInfo.includes('traveler_type') && (

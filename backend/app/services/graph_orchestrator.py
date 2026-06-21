@@ -174,6 +174,7 @@ async def classify_intent(state: TravelState) -> dict:
     intent_prompt = f"""Analyze the user's travel-related message and return a JSON object with these fields:
 - "intent": one of:
     - "general_chat" (greetings like hi/hello/hey, small talk, thank you, goodbye, how are you, or any casual non-travel-specific conversation)
+    - "clarify" (USE THIS when the user's message is AMBIGUOUS or COMPLEX and could map to multiple intents. For example: "I want to explore Kochi" could mean place_info, hotel_search, itinerary, or attractions. "Help me with my trip to Goa" could be itinerary, hotels, or place_info. When unsure, ASK the user what they want instead of guessing wrong. Also use this when user says just "yes", "no", "ok", "sure" etc. WITHOUT clear context from conversation history about what they're confirming)
     - "travel_question" (user asking a SPECIFIC QUESTION about travel — feasibility, logistics, safety, language, duration, transport mode, budget estimates, best season, visa, packing tips, or any yes/no/how/can-I type question about a trip or destination. Examples: "can I complete Maharashtra in 2 weeks on a bike?", "is Ladakh safe for solo female travelers?", "what language do they speak in Goa?", "how many days do I need for Kerala?", "is monsoon a good time to visit Munnar?", "can I do Rajasthan on a budget of 20k?")
     - "hotel_search" (user asking for general hotels/accommodation in a city)
     - "specific_hotel_info" (user asking about a specific hotel by name)
@@ -184,6 +185,7 @@ async def classify_intent(state: TravelState) -> dict:
     - "destination_discovery" (user describing their preferences/vibes without naming a specific destination, e.g. 'I want to go to a beach with cliffs')
     - "directions_search" (user asking for map directions, routes, or how to get from one place to another)
     - "itinerary_search" (user EXPLICITLY asking to plan, generate, or create a multi-day travel itinerary, trip plan, or schedule. Must use words like 'plan', 'itinerary', 'schedule', 'create a trip'. Do NOT use this for questions about trip feasibility or duration — use travel_question for those)
+- "clarify_question": (ONLY when intent is "clarify") A friendly question asking the user what they'd like to do. Include specific options. Example: "I'd love to help with Kochi! Would you like me to: 🏨 Search for hotels, 🏛️ Show top attractions, 🍽️ Find restaurants, 🗺️ Plan a full itinerary, or ℹ️ Tell you about the destination?"
 - "destination": the city or place name mentioned, or resolved from conversation history (or null)
 - "hotel_name": the specific hotel name if mentioned (or null)
 - "place_type": one of ["city", "poi"] - "city" if it's a broad region/town (e.g. Kochi, Bangalore), "poi" if it's a specific point of interest (e.g. Fort Kochi Beach).
@@ -206,6 +208,13 @@ async def classify_intent(state: TravelState) -> dict:
     - If user message is already a complete question, effective_query = the user message as-is (with typos corrected)
     - ALWAYS produce a complete, self-contained question that makes sense without conversation history
 
+CRITICAL — CONFIRMATIONS (yes/no/ok/sure):
+When the user says "yes", "sure", "ok", "yeah", "do it", "go ahead", etc.:
+1. Look at the PREVIOUS conversation to find the assistant's last question or suggestion
+2. If the assistant asked "Would you like me to search for hotels?", then intent = "hotel_search"
+3. If the assistant offered multiple options and user picked one (e.g. "hotels"), map to that intent
+4. If there's NO clear previous question to confirm, use intent = "clarify" and ask what they want
+
 CRITICAL — CORRECTIONS & FOLLOW-UPS:
 When the user says things like "i mean X", "sorry, I meant X", "no, X", or corrects a typo/name from a previous message:
 1. Look at the PREVIOUS conversation to find the original question
@@ -213,6 +222,12 @@ When the user says things like "i mean X", "sorry, I meant X", "no, X", or corre
 3. Set "destination" to the CORRECTED place name
 4. Set "effective_query" to the original question with the corrected entity swapped in
 Do NOT treat corrections as a brand new generic query about the place.
+
+CRITICAL — WHEN TO USE "clarify":
+- Message could reasonably map to 2+ different intents and you're not 80%+ confident
+- User mentions a destination but doesn't specify what they want (e.g. "Kochi", "help me with Goa", "I'm going to Mumbai next week")
+- User says "yes"/"no"/"ok" but there's no clear previous question in conversation history
+- DO NOT use clarify for clear-cut requests like "hotels in Delhi", "tell me about Jaipur", "plan a 3-day trip to Kerala"
 
 Also handle TYPOS intelligently: if user writes "kooch" but likely means "Kochi", or "bnaglore" for "Bangalore", resolve to the correct spelling.
 {history_block}
@@ -241,6 +256,21 @@ User message: {message}"""
         f"Detected intent: {intent}, Destination: {destination}, "
         f"Hotel: {hotel_name}, Place Type: {place_type}, Full parsed: {parsed}"
     )
+
+    # Handle clarify intent — return the clarifying question as the response
+    if intent == "clarify":
+        clarify_q = parsed.get("clarify_question") or (
+            f"I'd love to help with {destination or 'your trip'}! What would you like me to do? "
+            "🏨 Search for hotels, 🏛️ Show attractions, 🍽️ Find restaurants, "
+            "🗺️ Plan an itinerary, or ℹ️ Tell you about the destination?"
+        )
+        logger.info(f"Clarify intent — asking user: {clarify_q}")
+        return {
+            "intent": "clarify",
+            "response_text": clarify_q,
+            "source": "clarify",
+            "destination": destination,
+        }
 
     if intent not in ["general_chat", "destination_discovery", "directions_search"] and not destination and not hotel_name:
         logger.warning("No destination or hotel detected in user message")
@@ -1369,8 +1399,8 @@ async def save_response(state: TravelState) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════
 def route_by_intent(state: TravelState) -> str:
     """Routes from classify_intent to the appropriate handler node."""
-    # If classify_intent set an error, skip to save_response (still save to history)
-    if state.get("error"):
+    # If classify_intent set an error or a clarify response, skip to save_response
+    if state.get("error") or state.get("response_text"):
         return "save_response"
 
     intent = state.get("intent", "place_info")
@@ -1512,6 +1542,17 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
     }
 
     logger.info(f"Running travel graph with thread_id={thread_id}, user_id={user_id}")
+
+    # Seed conversation_history from frontend if checkpointer has none (loaded session)
+    if getattr(request, "conversation_history", None):
+        try:
+            saved_state = travel_graph.get_state(config)
+            if not (saved_state and hasattr(saved_state, "values") and saved_state.values.get("conversation_history")):
+                initial_state["conversation_history"] = request.conversation_history
+                logger.info(f"Restored conversation_history from request ({len(request.conversation_history)} msgs)")
+        except Exception:
+            initial_state["conversation_history"] = request.conversation_history
+
     result = await travel_graph.ainvoke(initial_state, config)
 
     # Normalize: node outputs use 'response_text', but ChatResponse expects 'response'
@@ -1604,6 +1645,11 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
     except Exception as e:
         logger.warning(f"Failed to load previous state for stream: {e}")
 
+    # If checkpointer had no conversation_history, seed from frontend (loaded session)
+    if not initial_state.get("conversation_history") and getattr(request, "conversation_history", None):
+        logger.info(f"[STREAM] Restoring conversation_history from request ({len(request.conversation_history)} msgs)")
+        initial_state["conversation_history"] = request.conversation_history
+
     # Run manage_history
     history_state = initial_state.copy()
     history_result = await manage_history(history_state)
@@ -1616,12 +1662,21 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
     intent = state_after_intent.get("intent", "place_info")
     logger.info(f"[STREAM] Intent: {intent}")
 
-    # ── Check for errors or missing info from classify_intent ───────────────
+    # ── Check for errors, missing info, or clarify responses from classify_intent ──
     if state_after_intent.get("error"):
         yield {"event": "done", "data": {
             "response": state_after_intent["error"],
             "source": state_after_intent.get("source", "system"),
             "missing_info": state_after_intent.get("missing_info"),
+        }}
+        return
+
+    if state_after_intent.get("response_text") and intent == "clarify":
+        # Save the clarify response to history
+        state_after_intent["conversation_history"].append({"role": "assistant", "content": state_after_intent["response_text"]})
+        yield {"event": "done", "data": {
+            "response": state_after_intent["response_text"],
+            "source": state_after_intent.get("source", "clarify"),
         }}
         return
 

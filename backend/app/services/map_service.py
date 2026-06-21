@@ -4,6 +4,7 @@ from ..config import settings
 from ..utils.logger import get_logger
 from ..models.place_model import DirectionResult
 from serpapi import GoogleSearch
+from .cache_service import cached_serpapi_call, TTL_1H
 
 logger = get_logger(__name__)
 
@@ -37,8 +38,7 @@ def compare_directions(start_addr: str, end_addr: str, travel_mode: str) -> List
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("directions", params, ttl=TTL_1H)
         
         directions_list = results.get("directions", [])
         
@@ -48,8 +48,7 @@ def compare_directions(start_addr: str, end_addr: str, travel_mode: str) -> List
             params["travel_mode"] = "6"
             travel_mode = "best"
             mode_int = 6
-            search = GoogleSearch(params)
-            results = search.get_dict()
+            results = cached_serpapi_call("directions", params, ttl=TTL_1H)
             directions_list = results.get("directions", [])
 
         if not directions_list:

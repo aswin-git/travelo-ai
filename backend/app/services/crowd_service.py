@@ -3,8 +3,8 @@
 Fetches crowd/busyness data for places using SerpAPI Google Maps Place API.
 
 Uses `popular_times` from the Place result to determine how crowded a
-location typically is at a given day+hour. Supports an in-memory TTL cache
-so repeated requests within 2 hours don't burn extra API credits.
+location typically is at a given day+hour. Cached via Redis (falls back
+to direct API calls when Redis is unavailable).
 """
 
 import time
@@ -15,28 +15,26 @@ from serpapi import GoogleSearch
 
 from ..config import settings
 from ..utils.logger import get_logger
+from .cache_service import cache_get, cache_set, make_cache_key, TTL_2H
 
 logger = get_logger(__name__)
 
+
 # ---------------------------------------------------------------------------
-# In-memory cache: key = data_id, value = { "data": ..., "ts": unix_time }
-# TTL = 2 hours (crowd patterns don't change that fast)
+# Cache helpers (now use Redis via cache_service)
 # ---------------------------------------------------------------------------
-_crowd_cache: Dict[str, Dict[str, Any]] = {}
-CACHE_TTL_SECONDS = 2 * 60 * 60  # 2 hours
+CROWD_CACHE_PREFIX = "crowd"
 
 
-def _get_cached(data_id: str) -> Optional[dict]:
+def _get_cached_crowd(data_id: str) -> Optional[dict]:
     """Return cached crowd data if fresh, else None."""
-    entry = _crowd_cache.get(data_id)
-    if entry and (time.time() - entry["ts"]) < CACHE_TTL_SECONDS:
-        logger.info(f"Crowd cache HIT for {data_id}")
-        return entry["data"]
-    return None
+    key = f"travelo:{CROWD_CACHE_PREFIX}:{data_id}"
+    return cache_get(key)
 
 
-def _set_cache(data_id: str, data: dict):
-    _crowd_cache[data_id] = {"data": data, "ts": time.time()}
+def _set_cached_crowd(data_id: str, data: dict):
+    key = f"travelo:{CROWD_CACHE_PREFIX}:{data_id}"
+    cache_set(key, data, TTL_2H)
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +78,7 @@ def fetch_crowd_data(data_id: str, visit_hour: int = None) -> Optional[dict]:
         return None
 
     # Check cache first
-    cached = _get_cached(data_id)
+    cached = _get_cached_crowd(data_id)
     if cached:
         return cached
 
@@ -107,8 +105,8 @@ def fetch_crowd_data(data_id: str, visit_hour: int = None) -> Optional[dict]:
             "hl": "en",
             "api_key": api_key,
         }
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        from .cache_service import cached_serpapi_call
+        results = cached_serpapi_call("crowd_place", params, ttl=TTL_2H)
 
         place = results.get("place_results", {})
         popular_times = place.get("popular_times", {})
@@ -123,7 +121,7 @@ def fetch_crowd_data(data_id: str, visit_hour: int = None) -> Optional[dict]:
                 "crowd_emoji": "⚪",
                 "info": "No crowd data available",
             }
-            _set_cache(data_id, result)
+            _set_cached_crowd(data_id, result)
             return result
 
         # Find the closest hour entry
@@ -168,7 +166,7 @@ def fetch_crowd_data(data_id: str, visit_hour: int = None) -> Optional[dict]:
                 "info": "No crowd data available for this hour",
             }
 
-        _set_cache(data_id, result)
+        _set_cached_crowd(data_id, result)
         logger.info(f"Crowd data for {data_id}: {result['crowd_label']} (score: {result['busyness_score']})")
         return result
 

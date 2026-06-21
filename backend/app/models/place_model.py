@@ -122,6 +122,7 @@ class ChatRequest(BaseModel):
     meal_preference: Optional[str] = None  # "fixed" or "flexible"
     crowd_aware: Optional[bool] = None  # Whether to consider crowd data
     crowd_precision: Optional[str] = None  # "precise" (SerpAPI) or "approximate" (LLM estimate)
+    conversation_history: Optional[list] = None  # Previous messages for restoring context on loaded sessions
 
 class HotelResult(BaseModel):
     name: str
