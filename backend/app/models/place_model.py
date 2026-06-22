@@ -107,6 +107,8 @@ class PlaceResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    intent: Optional[str] = None
+    destination: Optional[str] = None
     budget: Optional[int] = None
     session_id: Optional[str] = None  # Identifies the conversation thread for multi-turn memory
     traveler_type: Optional[str] = None

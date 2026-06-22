@@ -69,6 +69,7 @@ class TravelState(TypedDict, total=False):
 
     # ── Intent classification outputs ───────────────────────────────────────
     intent: str
+    forced_intent: Optional[str]
     destination: Optional[str]
     hotel_name: Optional[str]
     place_type: str
@@ -147,6 +148,7 @@ async def manage_history(state: TravelState) -> dict:
         "show_events_prompt": False,
         "missing_info": None,
         "error": None,
+        "response_text": "",
     }
 
 
@@ -160,25 +162,37 @@ async def classify_intent(state: TravelState) -> dict:
     'there', 'that city', 'the same place', etc.
     """
     message = state["message"]
-    history = state.get("conversation_history") or []
-    logger.info("Detecting intent and extracting info using Gemini...")
+    forced_intent = state.get("forced_intent")
 
-    # Build history context for coreference resolution
-    history_block = ""
-    if len(history) > 1:  # More than just the current message
-        history_text = _format_history(history[:-1])  # Exclude current msg (it's in the prompt)
-        history_block = f"""\nPrevious conversation for context (use this to resolve references like 'there', 'that place', etc.):
+    # If an intent is forced (e.g. via UI button), skip the LLM extraction
+    if forced_intent:
+        logger.info(f"Skipping LLM classification, forced intent: {forced_intent}")
+        parsed = {
+            "intent": forced_intent,
+            "destination": state.get("destination"),
+            "hotel_name": state.get("hotel_name"),
+            "place_type": "city"
+        }
+    else:
+        history = state.get("conversation_history") or []
+        logger.info("Detecting intent and extracting info using Gemini...")
+
+        # Build history context for coreference resolution
+        history_block = ""
+        if len(history) > 1:  # More than just the current message
+            history_text = _format_history(history[:-1])  # Exclude current msg (it's in the prompt)
+            history_block = f"""\nPrevious conversation for context (use this to resolve references like 'there', 'that place', etc.):
 {history_text}
 """
 
-    intent_prompt = f"""Analyze the user's travel-related message and return a JSON object with these fields:
+        intent_prompt = f"""Analyze the user's travel-related message and return a JSON object with these fields:
 - "intent": one of:
     - "general_chat" (greetings like hi/hello/hey, small talk, thank you, goodbye, how are you, or any casual non-travel-specific conversation)
     - "clarify" (USE THIS when the user's message is AMBIGUOUS or COMPLEX and could map to multiple intents. For example: "I want to explore Kochi" could mean place_info, hotel_search, itinerary, or attractions. "Help me with my trip to Goa" could be itinerary, hotels, or place_info. When unsure, ASK the user what they want instead of guessing wrong. Also use this when user says just "yes", "no", "ok", "sure" etc. WITHOUT clear context from conversation history about what they're confirming)
     - "travel_question" (user asking a SPECIFIC QUESTION about travel — feasibility, logistics, safety, language, duration, transport mode, budget estimates, best season, visa, packing tips, or any yes/no/how/can-I type question about a trip or destination. Examples: "can I complete Maharashtra in 2 weeks on a bike?", "is Ladakh safe for solo female travelers?", "what language do they speak in Goa?", "how many days do I need for Kerala?", "is monsoon a good time to visit Munnar?", "can I do Rajasthan on a budget of 20k?")
     - "hotel_search" (user asking for general hotels/accommodation in a city)
     - "specific_hotel_info" (user asking about a specific hotel by name)
-    - "nearby_attractions" (user asking to see nearby places, top sights, or attractions for a city)
+    - "attraction_search" (user asking to see nearby places, top sights, or attractions for a city)
     - "restaurant_search" (user asking for places to eat, restaurants, or food in a city)
     - "event_search" (user asking for things happening, events, concerts, or festivals in a city)
     - "place_info" (user asking BROADLY about a tourist place — "tell me about X", "I want to visit X", or wanting a general overview/summary of a destination. This is NOT for specific questions — use travel_question for those)
@@ -208,6 +222,18 @@ async def classify_intent(state: TravelState) -> dict:
     - If user message is already a complete question, effective_query = the user message as-is (with typos corrected)
     - ALWAYS produce a complete, self-contained question that makes sense without conversation history
 
+CRITICAL — ANSWERING FOLLOW-UP QUESTIONS:
+When the assistant previously asked the user for specific information (like a destination, dates, preferences, etc.) and the user's current message answers that question:
+1. Look at the PREVIOUS conversation to find what the assistant asked for
+2. INHERIT the intent from the original request that triggered the assistant's question
+3. Use the user's answer to fill in the missing information
+Examples:
+- User said "hotels" → Assistant asked "which destination?" → User says "kochi" → intent = "hotel_search", destination = "Kochi"
+- User said "restaurants" → Assistant asked "which city?" → User says "mumbai" → intent = "restaurant_search", destination = "Mumbai"
+- User said "plan a trip" → Assistant asked "where?" → User says "goa" → intent = "itinerary_search", destination = "Goa"
+- Assistant offered clarify options (hotels/attractions/etc.) → User says "hotels" → intent = "hotel_search" with the destination from context
+Do NOT use "clarify" when the user is clearly answering a question the assistant just asked.
+
 CRITICAL — CONFIRMATIONS (yes/no/ok/sure):
 When the user says "yes", "sure", "ok", "yeah", "do it", "go ahead", etc.:
 1. Look at the PREVIOUS conversation to find the assistant's last question or suggestion
@@ -225,27 +251,28 @@ Do NOT treat corrections as a brand new generic query about the place.
 
 CRITICAL — WHEN TO USE "clarify":
 - Message could reasonably map to 2+ different intents and you're not 80%+ confident
-- User mentions a destination but doesn't specify what they want (e.g. "Kochi", "help me with Goa", "I'm going to Mumbai next week")
+- User mentions a destination but doesn't specify what they want (e.g. "Kochi", "help me with Goa", "I'm going to Mumbai next week") AND there is NO prior intent in the conversation history to inherit
 - User says "yes"/"no"/"ok" but there's no clear previous question in conversation history
 - DO NOT use clarify for clear-cut requests like "hotels in Delhi", "tell me about Jaipur", "plan a 3-day trip to Kerala"
+- DO NOT use clarify when the user is answering a follow-up question from the assistant (inherit the original intent instead)
 
 Also handle TYPOS intelligently: if user writes "kooch" but likely means "Kochi", or "bnaglore" for "Bangalore", resolve to the correct spelling.
 {history_block}
 User message: {message}"""
 
-    extraction_response = model.generate_content(
-        intent_prompt,
-        generation_config={"response_mime_type": "application/json"},
-    )
+        extraction_response = model.generate_content(
+            intent_prompt,
+            generation_config={"response_mime_type": "application/json"},
+        )
 
-    try:
-        parsed = json.loads(extraction_response.text)
-    except (json.JSONDecodeError, AttributeError) as e:
-        logger.error(f"Failed to parse Gemini structured output: {e}", exc_info=True)
-        return {
-            "error": "Sorry, I had trouble understanding your request. Could you rephrase it?",
-            "source": "system",
-        }
+        try:
+            parsed = json.loads(extraction_response.text)
+        except (json.JSONDecodeError, AttributeError) as e:
+            logger.error(f"Failed to parse Gemini structured output: {e}", exc_info=True)
+            return {
+                "error": "Sorry, I had trouble understanding your request. Could you rephrase it?",
+                "source": "system",
+            }
 
     intent = parsed.get("intent", "place_info")
     destination = parsed.get("destination") or state.get("destination")
@@ -272,12 +299,8 @@ User message: {message}"""
             "destination": destination,
         }
 
-    if intent not in ["general_chat", "destination_discovery", "directions_search"] and not destination and not hotel_name:
-        logger.warning("No destination or hotel detected in user message")
-        return {
-            "error": "I'm a travel assistant. Please ask me about a specific destination or hotel!",
-            "source": "system",
-        }
+    # Remove the strict error block for missing destination here. We will handle it via missing_info.
+    requires_dest = ["hotel_search", "restaurant_search", "attraction_search", "event_search", "itinerary_search", "place_info"]
 
     budget = parsed.get("budget") or state.get("budget")
     traveler_type = parsed.get("traveler_type") or state.get("traveler_type")
@@ -318,6 +341,9 @@ User message: {message}"""
         if not start_location: missing_info.append("itinerary_start_location")
         if not meal_preference: missing_info.append("meal_preference")
         if crowd_aware is None: missing_info.append("crowd_aware")
+
+    if intent in requires_dest and not destination and not hotel_name:
+        missing_info.insert(0, "destination")
 
     if missing_info:
         logger.info(f"Missing info for {intent}: {missing_info}")
@@ -1410,7 +1436,7 @@ def route_by_intent(state: TravelState) -> str:
         "travel_question": "handle_travel_question",
         "specific_hotel_info": "handle_specific_hotel",
         "hotel_search": "handle_hotel_search",
-        "nearby_attractions": "handle_attractions",
+        "attraction_search": "handle_attractions",
         "restaurant_search": "handle_restaurants",
         "event_search": "handle_events",
         "place_info": "handle_place_info",
@@ -1525,6 +1551,8 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
 
     initial_state: TravelState = {
         "message": request.message,
+        "forced_intent": getattr(request, "intent", None),
+        "destination": getattr(request, "destination", None),
         "budget": request.budget,
         "traveler_type": request.traveler_type,
         "cuisine": request.cuisine,
@@ -1613,6 +1641,8 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
 
     initial_state: TravelState = {
         "message": request.message,
+        "forced_intent": getattr(request, "intent", None),
+        "destination": getattr(request, "destination", None),
         "budget": request.budget,
         "traveler_type": request.traveler_type,
         "cuisine": request.cuisine,
@@ -1662,8 +1692,18 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
     intent = state_after_intent.get("intent", "place_info")
     logger.info(f"[STREAM] Intent: {intent}")
 
+    # ── Helper: persist state to checkpointer on early-return paths ──────────
+    def _save_checkpoint(state_dict):
+        """Save state to LangGraph checkpointer so conversation history persists."""
+        try:
+            travel_graph.update_state(config, state_dict)
+        except Exception as e:
+            logger.warning(f"[STREAM] Failed to save checkpoint on early return: {e}")
+
     # ── Check for errors, missing info, or clarify responses from classify_intent ──
     if state_after_intent.get("error"):
+        # Save history so next turn has context
+        _save_checkpoint(state_after_intent)
         yield {"event": "done", "data": {
             "response": state_after_intent["error"],
             "source": state_after_intent.get("source", "system"),
@@ -1672,8 +1712,9 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
         return
 
     if state_after_intent.get("response_text") and intent == "clarify":
-        # Save the clarify response to history
+        # Save the clarify response to history AND persist to checkpointer
         state_after_intent["conversation_history"].append({"role": "assistant", "content": state_after_intent["response_text"]})
+        _save_checkpoint(state_after_intent)
         yield {"event": "done", "data": {
             "response": state_after_intent["response_text"],
             "source": state_after_intent.get("source", "clarify"),
@@ -1681,6 +1722,8 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
         return
 
     if state_after_intent.get("missing_info"):
+        # Save history + intent so next turn knows what was being asked
+        _save_checkpoint(state_after_intent)
         yield {"event": "done", "data": {
             "response": state_after_intent.get("error", "I need a few more details."),
             "source": "system",

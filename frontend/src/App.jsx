@@ -30,6 +30,7 @@ export default function App() {
   const [endLocation, setEndLocation] = useState('')
   const [travelMode, setTravelMode] = useState('')
   const [lastMessage, setLastMessage] = useState('')
+  const [lastIntent, setLastIntent] = useState(null)
   const [expandedRoute, setExpandedRoute] = useState(null)
   const [numDays, setNumDays] = useState(3)
   const [pacing, setPacing] = useState('')
@@ -266,15 +267,19 @@ export default function App() {
     }
   }
 
-  async function sendDirectMessage(text, skipAppend = false) {
+  async function sendDirectMessage(text, skipAppend = false, forceIntent = null) {
     if (!skipAppend) {
       const userMsg = { role: 'user', content: text }
       setChatHistory(prev => [...prev, userMsg])
+      setLastMessage(text)
+      setLastIntent(forceIntent)
     }
     setLoading(true)
     try {
       const payload = {
         message: text,
+        intent: forceIntent,
+        destination: (destination && destination !== 'Explore') ? destination : null,
         budget: budget ? Number(budget) : null,
         session_id: sessionId,
         traveler_type: travelerType || null,
@@ -471,7 +476,7 @@ export default function App() {
   const handleMissingInfoSubmit = (e) => {
     e.preventDefault()
     setMissingInfo(null)
-    sendDirectMessage(lastMessage, true) // skip appending user message again
+    sendDirectMessage(lastMessage, true, lastIntent) // skip appending user message again
   }
 
   const handleReviewRequest = async (placeName) => {
@@ -612,15 +617,15 @@ export default function App() {
                 {missingInfo.includes('dates') && (
                   <div className="form-group">
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => { setCheckIn(todayDateStr); setCheckOut(tomorrowDateStr); }}
                         style={{ padding: '6px 12px', fontSize: '0.85rem', borderRadius: '4px', background: 'var(--surface-color)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer' }}
                       >
                         Today & Tomorrow
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => { setCheckIn(tomorrowDateStr); const next = new Date(tomorrowDate); next.setDate(next.getDate() + 1); setCheckOut(next.toISOString().split('T')[0]); }}
                         style={{ padding: '6px 12px', fontSize: '0.85rem', borderRadius: '4px', background: 'var(--surface-color)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer' }}
                       >
@@ -631,6 +636,12 @@ export default function App() {
                     <input type="date" value={checkIn} min={todayDateStr} onChange={e => setCheckIn(e.target.value)} required />
                     <label>Check-out Date</label>
                     <input type="date" value={checkOut} min={checkIn || todayDateStr} onChange={e => setCheckOut(e.target.value)} required />
+                  </div>
+                )}
+                {missingInfo.includes('destination') && (
+                  <div className="form-group">
+                    <label>Where do you want to go?</label>
+                    <input type="text" value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g. Kochi, Paris, Tokyo" required />
                   </div>
                 )}
                 {missingInfo.includes('traveler_type') && (
@@ -1322,9 +1333,41 @@ export default function App() {
               </>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60%', color: 'var(--text-secondary)' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🌍</div>
-                <div style={{ fontWeight: '500' }}>Your travel insights will appear here</div>
-                <div style={{ fontSize: '0.85rem', marginTop: '8px' }}>Try searching for "hotels in Kochi" or "tell me about Alappuzha"</div>
+                {activeTab === 'Hotels' && (
+                  <>
+                    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏨</div>
+                    <div style={{ fontWeight: '500', marginBottom: '16px' }}>Find the perfect place to stay</div>
+                    <button className="empty-state-btn" onClick={() => sendDirectMessage("Find hotels for me", false, "hotel_search")}>Find Hotels</button>
+                  </>
+                )}
+                {activeTab === 'Food' && (
+                  <>
+                    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🍽️</div>
+                    <div style={{ fontWeight: '500', marginBottom: '16px' }}>Discover local cuisine</div>
+                    <button className="empty-state-btn" onClick={() => sendDirectMessage("Find restaurants for me", false, "restaurant_search")}>Find Restaurants</button>
+                  </>
+                )}
+                {activeTab === 'Places' && (
+                  <>
+                    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏛️</div>
+                    <div style={{ fontWeight: '500', marginBottom: '16px' }}>Explore top attractions</div>
+                    <button className="empty-state-btn" onClick={() => sendDirectMessage("What are the top attractions?", false, "attraction_search")}>Discover Attractions</button>
+                  </>
+                )}
+                {activeTab === 'Events' && (
+                  <>
+                    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎫</div>
+                    <div style={{ fontWeight: '500', marginBottom: '16px' }}>See what's happening</div>
+                    <button className="empty-state-btn" onClick={() => sendDirectMessage("Find events and concerts", false, "event_search")}>Find Events</button>
+                  </>
+                )}
+                {activeTab === 'Itinerary' && (
+                  <>
+                    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🗺️</div>
+                    <div style={{ fontWeight: '500', marginBottom: '16px' }}>Plan your entire trip</div>
+                    <button className="empty-state-btn" onClick={() => sendDirectMessage("Create a travel itinerary for me", false, "itinerary_search")}>Create Itinerary</button>
+                  </>
+                )}
               </div>
             )}
           </div>
