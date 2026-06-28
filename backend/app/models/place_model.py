@@ -109,6 +109,7 @@ class ChatRequest(BaseModel):
     message: str
     intent: Optional[str] = None
     destination: Optional[str] = None
+    destinations: Optional[List[str]] = None
     budget: Optional[int] = None
     session_id: Optional[str] = None  # Identifies the conversation thread for multi-turn memory
     traveler_type: Optional[str] = None
@@ -124,6 +125,12 @@ class ChatRequest(BaseModel):
     meal_preference: Optional[str] = None  # "fixed" or "flexible"
     crowd_aware: Optional[bool] = None  # Whether to consider crowd data
     crowd_precision: Optional[str] = None  # "precise" (SerpAPI) or "approximate" (LLM estimate)
+    interests: Optional[str] = None
+    activity_level: Optional[str] = None
+    kids_friendly: Optional[bool] = None
+    dietary_restrictions: Optional[str] = None
+    target_place: Optional[str] = None
+    target_day: Optional[int] = None
     conversation_history: Optional[list] = None  # Previous messages for restoring context on loaded sessions
 
 class HotelResult(BaseModel):

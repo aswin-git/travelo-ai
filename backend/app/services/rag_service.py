@@ -72,16 +72,20 @@ async def process_chat_query(db: Session, message: str, place_name: str, history
 
         context = existing_place.description or ""
         
-        # If the DB description is very short or empty, try to fetch all chunks from ChromaDB
-        if not context or len(context) < 50:
-            try:
-                chroma_results = query_documents(place_name, n_results=5)
-                if chroma_results and chroma_results.get("documents") and chroma_results["documents"][0]:
-                    docs = chroma_results["documents"][0]
-                    context = "\n\n".join(docs)
-                    logger.info(f"Using {len(docs)} chunks from ChromaDB as context fallback.")
-            except Exception as e:
-                logger.warning(f"ChromaDB query failed: {e}", exc_info=True)
+        # Active RAG: Always query ChromaDB using the user's actual question to fetch
+        # specific raw facts (from Wikivoyage) that might not be in the general DB description.
+        try:
+            # Query using the user's message, not just the place name
+            chroma_results = query_documents(message, n_results=5)
+            if chroma_results and chroma_results.get("documents") and chroma_results["documents"][0]:
+                docs = chroma_results["documents"][0]
+                retrieved_facts = "\n\n".join(docs)
+                
+                # Combine base description with specific retrieved facts
+                context = f"=== General Description ===\n{context}\n\n=== Specific Retrieved Facts ===\n{retrieved_facts}"
+                logger.info(f"Appended {len(docs)} relevant chunks from ChromaDB for query: '{message}'")
+        except Exception as e:
+            logger.warning(f"ChromaDB query failed: {e}", exc_info=True)
 
         # FIX 2: Fetch weather at runtime and inject — never persist it
         weather_info = _safe_fetch_weather(

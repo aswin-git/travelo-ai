@@ -117,7 +117,7 @@ export default function Sidebar({
       <div className="sidebar-header">
         {!collapsed && (
           <div className="sidebar-brand">
-            <div className="sidebar-logo-icon">🌍</div>
+            <img src="/logo.png" alt="Travelo AI Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             <span className="sidebar-logo-text">TRAVELO AI</span>
           </div>
         )}

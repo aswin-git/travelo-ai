@@ -68,9 +68,10 @@ class TravelState(TypedDict, total=False):
     conversation_history: list  # list of {"role": str, "content": str} dicts
 
     # ── Intent classification outputs ───────────────────────────────────────
-    intent: str
+    intent: Optional[str]
     forced_intent: Optional[str]
     destination: Optional[str]
+    destinations: Optional[list]  # Multi-city array
     hotel_name: Optional[str]
     place_type: str
     check_in: Optional[str]
@@ -105,6 +106,16 @@ class TravelState(TypedDict, total=False):
     meal_preference: Optional[str]
     crowd_aware: Optional[bool]
     crowd_precision: Optional[str]  # "precise" or "approximate"
+    interests: Optional[str]
+    activity_level: Optional[str]
+    kids_friendly: Optional[bool]
+    dietary_restrictions: Optional[str]
+
+    # ── Conversational Modification Fields ──────────────────────────────────
+    target_place: Optional[str]
+    target_day: Optional[int]
+    pending_place_data: Optional[dict]
+    awaiting_confirmation: Optional[bool]
 
     # ── Internal routing flag ───────────────────────────────────────────────
     _hotel_found: bool  # used by handle_specific_hotel → fallback logic
@@ -187,35 +198,44 @@ async def classify_intent(state: TravelState) -> dict:
 
         intent_prompt = f"""Analyze the user's travel-related message and return a JSON object with these fields:
 - "intent": one of:
-    - "general_chat" (greetings like hi/hello/hey, small talk, thank you, goodbye, how are you, or any casual non-travel-specific conversation)
-    - "clarify" (USE THIS when the user's message is AMBIGUOUS or COMPLEX and could map to multiple intents. For example: "I want to explore Kochi" could mean place_info, hotel_search, itinerary, or attractions. "Help me with my trip to Goa" could be itinerary, hotels, or place_info. When unsure, ASK the user what they want instead of guessing wrong. Also use this when user says just "yes", "no", "ok", "sure" etc. WITHOUT clear context from conversation history about what they're confirming)
-    - "travel_question" (user asking a SPECIFIC QUESTION about travel — feasibility, logistics, safety, language, duration, transport mode, budget estimates, best season, visa, packing tips, or any yes/no/how/can-I type question about a trip or destination. Examples: "can I complete Maharashtra in 2 weeks on a bike?", "is Ladakh safe for solo female travelers?", "what language do they speak in Goa?", "how many days do I need for Kerala?", "is monsoon a good time to visit Munnar?", "can I do Rajasthan on a budget of 20k?")
-    - "hotel_search" (user asking for general hotels/accommodation in a city)
-    - "specific_hotel_info" (user asking about a specific hotel by name)
-    - "attraction_search" (user asking to see nearby places, top sights, or attractions for a city)
-    - "restaurant_search" (user asking for places to eat, restaurants, or food in a city)
-    - "event_search" (user asking for things happening, events, concerts, or festivals in a city)
-    - "place_info" (user asking BROADLY about a tourist place — "tell me about X", "I want to visit X", or wanting a general overview/summary of a destination. This is NOT for specific questions — use travel_question for those)
-    - "destination_discovery" (user describing their preferences/vibes without naming a specific destination, e.g. 'I want to go to a beach with cliffs')
-    - "directions_search" (user asking for map directions, routes, or how to get from one place to another)
-    - "itinerary_search" (user EXPLICITLY asking to plan, generate, or create a multi-day travel itinerary, trip plan, or schedule. Must use words like 'plan', 'itinerary', 'schedule', 'create a trip'. Do NOT use this for questions about trip feasibility or duration — use travel_question for those)
-- "clarify_question": (ONLY when intent is "clarify") A friendly question asking the user what they'd like to do. Include specific options. Example: "I'd love to help with Kochi! Would you like me to: 🏨 Search for hotels, 🏛️ Show top attractions, 🍽️ Find restaurants, 🗺️ Plan a full itinerary, or ℹ️ Tell you about the destination?"
-- "destination": the city or place name mentioned, or resolved from conversation history (or null)
-- "hotel_name": the specific hotel name if mentioned (or null)
-- "place_type": one of ["city", "poi"] - "city" if it's a broad region/town (e.g. Kochi, Bangalore), "poi" if it's a specific point of interest (e.g. Fort Kochi Beach).
-- "check_in": check-in date in YYYY-MM-DD format if mentioned (or null)
-- "check_out": check-out date in YYYY-MM-DD format if mentioned (or null)
-- "budget": total budget in numbers if mentioned (or null)
-- "traveler_type": one of ["solo", "couple", "family", "business", "budget"] if mentioned (or null)
-- "adults": number of adults if mentioned (or null)
-- "cuisine": type of food or cuisine requested if mentioned (or null)
-- "start_location": starting location for directions if mentioned (or null)
-- "end_location": ending location for directions if mentioned (or null)
-- "travel_mode": one of ["driving", "transit", "walking", "flight"] if mentioned (or null)
-- "num_days": number of days for itinerary if mentioned (or null)
-- "pacing": one of ["relaxed", "packed"] if mentioned or inferred (or null)
-- "meal_preference": one of ["fixed", "flexible"] if mentioned (or null). "fixed" means meals at standard Breakfast/Lunch/Dinner times, "flexible" means restaurants placed dynamically on the route
-- "crowd_aware": true if user mentions wanting to avoid crowds, crowd-aware planning, less crowded spots, or quiet places (or null)
+    - "general_chat"
+    - "clarify"
+    - "travel_question"
+    - "hotel_search"
+    - "specific_hotel_info"
+    - "attraction_search"
+    - "restaurant_search"
+    - "event_search"
+    - "place_info"
+    - "destination_discovery"
+    - "directions_search"
+    - "itinerary_search"
+    - "search_add_to_itinerary" (user asks to add a specific place to their existing itinerary)
+    - "confirm_add_to_itinerary" (user confirms "yes" to add the previously found place to their itinerary (only if awaiting_confirmation is True))
+- "clarify_question": (ONLY when intent is "clarify") A friendly question asking the user what they'd like to do.
+- "destination": the primary city or place name mentioned
+- "destinations": list of strings (ONLY if multiple cities/destinations are mentioned, e.g. ["Kochi", "Munnar"])
+- "hotel_name": the specific hotel name
+- "place_type": one of ["city", "poi"]
+- "check_in": date
+- "check_out": date
+- "budget": number
+- "traveler_type": one of ["solo", "couple", "family", "business", "budget"]
+- "adults": number
+- "cuisine": string
+- "start_location": string
+- "end_location": string
+- "travel_mode": one of ["driving", "transit", "walking", "flight"]
+- "num_days": number
+- "pacing": one of ["relaxed", "packed"]
+- "meal_preference": one of ["fixed", "flexible"]
+- "crowd_aware": boolean
+- "interests": string
+- "activity_level": one of ["high", "low"]
+- "kids_friendly": boolean
+- "dietary_restrictions": string
+- "target_place": (ONLY for search_add_to_itinerary - the name of the specific place they want to add)
+- "target_day": (ONLY for search_add_to_itinerary - if they specify a day number to add it to)
 - "effective_query": the FULL reconstructed question the user is really asking. This is CRITICAL for corrections and follow-ups:
     - If user says "i mean kochi" after asking "is kooch good for tamil speakers?", effective_query = "is kochi a good place for tamil speaking people?"
     - If user says "what about hotels there?" after discussing Paris, effective_query = "what about hotels in Paris?"
@@ -257,6 +277,7 @@ CRITICAL — WHEN TO USE "clarify":
 - DO NOT use clarify when the user is answering a follow-up question from the assistant (inherit the original intent instead)
 
 Also handle TYPOS intelligently: if user writes "kooch" but likely means "Kochi", or "bnaglore" for "Bangalore", resolve to the correct spelling.
+
 {history_block}
 User message: {message}"""
 
@@ -275,7 +296,31 @@ User message: {message}"""
             }
 
     intent = parsed.get("intent", "place_info")
+    clarify_question = parsed.get("clarify_question")
+
+    # Handle multi-city vs single city fallback
+    parsed_destinations = parsed.get("destinations")
+    state_destinations = state.get("destinations")
+    
+    if parsed_destinations and isinstance(parsed_destinations, list) and len(parsed_destinations) > 0:
+        destinations = parsed_destinations
+    else:
+        destinations = state_destinations
+        
     destination = parsed.get("destination") or state.get("destination")
+    
+    # If we have multiple destinations, ALWAYS join them to override a single destination
+    if destinations and len(destinations) > 1:
+        destination = " and ".join(destinations)
+    # Conversely, if we have a destination but no destinations array, put it in an array
+    elif destination and not destinations:
+        # Check if it contains "and" or "," and split it roughly, else just one item
+        if " and " in destination.lower() or "," in destination:
+            import re
+            destinations = [d.strip() for d in re.split(r'\s+and\s+|,', destination) if d.strip()]
+        else:
+            destinations = [destination]
+
     hotel_name = parsed.get("hotel_name") or state.get("hotel_name")
     place_type = parsed.get("place_type", "poi")
 
@@ -286,7 +331,7 @@ User message: {message}"""
 
     # Handle clarify intent — return the clarifying question as the response
     if intent == "clarify":
-        clarify_q = parsed.get("clarify_question") or (
+        clarify_q = clarify_question or (
             f"I'd love to help with {destination or 'your trip'}! What would you like me to do? "
             "🏨 Search for hotels, 🏛️ Show attractions, 🍽️ Find restaurants, "
             "🗺️ Plan an itinerary, or ℹ️ Tell you about the destination?"
@@ -297,6 +342,7 @@ User message: {message}"""
             "response_text": clarify_q,
             "source": "clarify",
             "destination": destination,
+            "destinations": destinations,
         }
 
     # Remove the strict error block for missing destination here. We will handle it via missing_info.
@@ -316,6 +362,20 @@ User message: {message}"""
     meal_preference = parsed.get("meal_preference") or state.get("meal_preference")
     crowd_aware = parsed.get("crowd_aware") if parsed.get("crowd_aware") is not None else state.get("crowd_aware")
     crowd_precision = state.get("crowd_precision")  # Only set via frontend form
+    interests = parsed.get("interests") or state.get("interests")
+    activity_level = parsed.get("activity_level") or state.get("activity_level")
+    kids_friendly = parsed.get("kids_friendly") if parsed.get("kids_friendly") is not None else state.get("kids_friendly")
+    dietary_restrictions = parsed.get("dietary_restrictions") or state.get("dietary_restrictions")
+    
+    target_place = parsed.get("target_place") or state.get("target_place")
+    target_day = parsed.get("target_day") or state.get("target_day")
+    pending_place_data = state.get("pending_place_data")
+    awaiting_confirmation = state.get("awaiting_confirmation")
+
+    # If we are waiting for confirmation and they say yes/no
+    if awaiting_confirmation and intent not in ("confirm_add_to_itinerary", "general_chat", "search_add_to_itinerary"):
+        if any(w in message.lower() for w in ["yes", "yeah", "sure", "add it", "ok"]):
+            intent = "confirm_add_to_itinerary"
 
     logger.info(
         f"Resolved Context -> Intent: {intent}, Dest: {destination}, Budget: {budget}, "
@@ -353,12 +413,17 @@ User message: {message}"""
             "missing_info": missing_info,
             "intent": intent,
             "destination": destination,
+            "destinations": destinations,
             "start_location": start_location,
             "end_location": end_location,
             "travel_mode": travel_mode,
             "num_days": num_days,
             "pacing": pacing,
             "meal_preference": meal_preference,
+            "interests": interests,
+            "activity_level": activity_level,
+            "kids_friendly": kids_friendly,
+            "dietary_restrictions": dietary_restrictions,
         }
 
     effective_query = parsed.get("effective_query") or message
@@ -367,6 +432,7 @@ User message: {message}"""
     return {
         "intent": intent,
         "destination": destination,
+        "destinations": destinations,
         "hotel_name": hotel_name,
         "place_type": place_type,
         "check_in": check_in,
@@ -385,6 +451,14 @@ User message: {message}"""
         "effective_query": effective_query,
         "crowd_aware": crowd_aware,
         "crowd_precision": crowd_precision,
+        "interests": interests,
+        "activity_level": activity_level,
+        "kids_friendly": kids_friendly,
+        "dietary_restrictions": dietary_restrictions,
+        "target_place": target_place,
+        "target_day": target_day,
+        "pending_place_data": pending_place_data,
+        "awaiting_confirmation": awaiting_confirmation,
     }
 
 
@@ -947,7 +1021,10 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     db: Session = config["configurable"]["db"]
     user_id = config["configurable"].get("user_id")
     destination = state.get("destination", "")
-    num_days = state.get("num_days", 3)
+    try:
+        num_days = int(state.get("num_days") or 3)
+    except (ValueError, TypeError):
+        num_days = 3
     pacing = state.get("pacing", "relaxed")
     budget = state.get("budget")
     traveler_type = state.get("traveler_type")
@@ -955,6 +1032,11 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     crowd_aware = state.get("crowd_aware", False)
     crowd_precision = state.get("crowd_precision", "approximate")
     meal_preference = state.get("meal_preference", "fixed")
+    interests = state.get("interests")
+    activity_level = state.get("activity_level")
+    kids_friendly = state.get("kids_friendly")
+    dietary_restrictions = state.get("dietary_restrictions")
+    cuisine = state.get("cuisine")
 
     logger.info(
         f"Generating geo-optimized {num_days}-day {pacing} itinerary for {destination}"
@@ -1001,20 +1083,40 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     # ── Phase 1: Fetch candidate places (PARALLEL) ──────────────────────────
     import asyncio
 
+    destinations_list = state.get("destinations")
+    if not destinations_list:
+        destinations_list = [destination]
+    else:
+        # Cap to 3 destinations to prevent excessive API load/timeouts
+        destinations_list = destinations_list[:3]
+
     loop = asyncio.get_event_loop()
-    attractions_future = loop.run_in_executor(None, lambda: search_attractions(destination) or [])
-    restaurants_future = loop.run_in_executor(None, lambda: search_restaurants(destination) or [])
+    
+    attractions_raw = []
+    restaurants_raw = []
+
+    # Prepare futures for all destinations
+    attraction_futures = [
+        loop.run_in_executor(None, lambda d=d: search_attractions(d, interests=interests, activity_level=activity_level, kids_friendly=kids_friendly) or [])
+        for d in destinations_list
+    ]
+    restaurant_futures = [
+        loop.run_in_executor(None, lambda d=d: search_restaurants(d, cuisine=cuisine, dietary_restrictions=dietary_restrictions, kids_friendly=kids_friendly) or [])
+        for d in destinations_list
+    ]
 
     try:
-        attractions_raw, restaurants_raw = await asyncio.gather(
-            attractions_future, restaurants_future
-        )
+        attractions_results = await asyncio.gather(*attraction_futures)
+        restaurants_results = await asyncio.gather(*restaurant_futures)
+        
+        for res in attractions_results:
+            attractions_raw.extend(res)
+        for res in restaurants_results:
+            restaurants_raw.extend(res)
     except Exception as e:
-        logger.warning(f"Parallel fetch failed, falling back: {e}")
-        attractions_raw = []
-        restaurants_raw = []
+        logger.warning(f"Parallel fetch failed for multi-city: {e}")
 
-    logger.info(f"Fetched {len(attractions_raw)} attractions + {len(restaurants_raw)} restaurants for {destination} (parallel)")
+    logger.info(f"Fetched {len(attractions_raw)} attractions + {len(restaurants_raw)} restaurants for {destinations_list} (parallel)")
 
     # Inject saved attractions/restaurants into candidate pools (at front, so they're prioritized)
     saved_attr_names = {a["name"].lower() for a in saved_attractions}
@@ -1157,6 +1259,10 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     budget_hint = f"The traveler has a budget of ₹{budget}." if budget else ""
     traveler_hint = f"The traveler type is: {traveler_type}." if traveler_type else ""
     origin_hint = f"The traveler is starting from {start_location}." if start_location else ""
+    interests_hint = f"Specific interests: {interests}." if interests else ""
+    activity_hint = f"Activity level preferred: {activity_level}." if activity_level else ""
+    dietary_hint = f"Dietary restrictions (CRITICAL for restaurant selections): {dietary_restrictions}." if dietary_restrictions else ""
+    kids_hint = "The traveler is traveling with kids/family. Prioritize family-friendly environments." if kids_friendly else ""
 
     # Build anchored events/items section for pinned saved items
     anchored_lines = []
@@ -1248,6 +1354,10 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
 {origin_hint}
 {budget_hint}
 {traveler_hint}
+{interests_hint}
+{activity_hint}
+{dietary_hint}
+{kids_hint}
 {crowd_hint}
 {anchored_section}{saved_section}
 I have pre-ordered the attractions and restaurants below by geographic proximity using nearest-neighbor routing. DO NOT reorder them.
@@ -1405,12 +1515,87 @@ CRITICAL RULES:
         }
 
 
+async def handle_search_add_to_itinerary(state: TravelState, config: RunnableConfig) -> dict:
+    """Handles searching for a place the user wants to add to their itinerary."""
+    target_place = state.get("target_place")
+    destination = state.get("destination")
+    
+    if not target_place:
+        return {"response_text": "I'm not sure which place you want to add. Could you specify its name?", "source": "system"}
+        
+    user_id = config["configurable"].get("user_id")
+    if not user_id:
+        return {"response_text": "You need to be logged in to save items to an itinerary! Please log in first.", "source": "system"}
+        
+    if not destination or not state.get("num_days"):
+        return {"response_text": "There is no itinerary generated yet. Please create one first.", "source": "system"}
+
+    from ..services.attraction_service import search_attractions
+    
+    search_query = f"{target_place} in {destination}" if destination else target_place
+    results = search_attractions(search_query)
+    
+    if not results:
+        return {"response_text": f"I couldn't find '{target_place}' to add to your itinerary. Could you check the name?", "source": "system"}
+        
+    best_match = results[0]
+    
+    return {
+        "pending_place_data": best_match,
+        "awaiting_confirmation": True,
+        "response_text": f"I found **{best_match['name']}**. Is this the place you want to add to your itinerary?",
+        "source": "system"
+    }
+
+
+async def handle_confirm_add_to_itinerary(state: TravelState, config: RunnableConfig) -> dict:
+    """Handles the user confirming they want to add the pending place to their itinerary."""
+    pending = state.get("pending_place_data")
+    target_day = state.get("target_day")
+    destination = state.get("destination")
+    
+    if not pending:
+        return {"response_text": "I lost track of what we were adding! What place did you want to add?", "source": "system", "awaiting_confirmation": False}
+        
+    db = config["configurable"]["db"]
+    user_id = config["configurable"].get("user_id")
+    
+    from ..models.user_model import SavedItem
+    
+    try:
+        new_item = SavedItem(
+            user_id=user_id,
+            item_type="attraction",
+            item_name=pending["name"],
+            destination=destination,
+            item_data=pending,
+            pinned_day=target_day,
+        )
+        db.add(new_item)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to save item: {e}")
+        return {"response_text": "Something went wrong saving the item to your itinerary.", "source": "system", "awaiting_confirmation": False, "pending_place_data": None}
+        
+    logger.info(f"Saved {pending['name']} to user itinerary.")
+    
+    # Return state clear updates; the graph will route this to handle_itinerary
+    return {
+        "awaiting_confirmation": False,
+        "pending_place_data": None,
+    }
+
+
 async def save_response(state: TravelState) -> dict:
     """Appends the assistant's response to conversation history for future turns."""
     history = list(state.get("conversation_history") or [])
     response_text = state.get("response_text") or state.get("error") or ""
     if response_text:
-        history.append({"role": "assistant", "content": response_text})
+        msg = {"role": "assistant", "content": response_text}
+        if state.get("itinerary"):
+            msg["itinerary"] = state.get("itinerary")
+        history.append(msg)
     
     # Trim to prevent unbounded growth
     if len(history) > MAX_HISTORY_MESSAGES:
@@ -1443,6 +1628,8 @@ def route_by_intent(state: TravelState) -> str:
         "destination_discovery": "handle_destination_discovery",
         "directions_search": "handle_directions",
         "itinerary_search": "handle_itinerary",
+        "search_add_to_itinerary": "handle_search_add_to_itinerary",
+        "confirm_add_to_itinerary": "handle_confirm_add_to_itinerary",
     }
     return route_map.get(intent, "handle_place_info")
 
@@ -1473,6 +1660,8 @@ def _build_travel_graph():
     graph.add_node("handle_destination_discovery", handle_destination_discovery)
     graph.add_node("handle_directions", handle_directions)
     graph.add_node("handle_itinerary", handle_itinerary)
+    graph.add_node("handle_search_add_to_itinerary", handle_search_add_to_itinerary)
+    graph.add_node("handle_confirm_add_to_itinerary", handle_confirm_add_to_itinerary)
     graph.add_node("handle_general_chat", handle_general_chat)
     graph.add_node("handle_travel_question", handle_travel_question)
     graph.add_node("save_response", save_response)
@@ -1495,6 +1684,8 @@ def _build_travel_graph():
             "handle_destination_discovery": "handle_destination_discovery",
             "handle_directions": "handle_directions",
             "handle_itinerary": "handle_itinerary",
+            "handle_search_add_to_itinerary": "handle_search_add_to_itinerary",
+            "handle_confirm_add_to_itinerary": "handle_confirm_add_to_itinerary",
             "handle_general_chat": "handle_general_chat",
             "handle_travel_question": "handle_travel_question",
             "save_response": "save_response",  # error path
@@ -1520,6 +1711,8 @@ def _build_travel_graph():
     graph.add_edge("handle_destination_discovery", "save_response")
     graph.add_edge("handle_directions", "save_response")
     graph.add_edge("handle_itinerary", "save_response")
+    graph.add_edge("handle_search_add_to_itinerary", "save_response")
+    graph.add_edge("handle_confirm_add_to_itinerary", "handle_itinerary")  # route to regenerate
     graph.add_edge("handle_general_chat", "save_response")
     graph.add_edge("handle_travel_question", "save_response")
     graph.add_edge("save_response", END)
@@ -1549,10 +1742,11 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
     user_id = str(user.id) if user else None
     config = {"configurable": {"thread_id": thread_id, "db": db, "user_id": user_id}}
 
-    initial_state: TravelState = {
+    raw_state: TravelState = {
         "message": request.message,
         "forced_intent": getattr(request, "intent", None),
         "destination": getattr(request, "destination", None),
+        "destinations": getattr(request, "destinations", None),
         "budget": request.budget,
         "traveler_type": request.traveler_type,
         "cuisine": request.cuisine,
@@ -1567,7 +1761,15 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
         "meal_preference": request.meal_preference,
         "crowd_aware": request.crowd_aware,
         "crowd_precision": request.crowd_precision,
+        "interests": getattr(request, "interests", None),
+        "activity_level": getattr(request, "activity_level", None),
+        "kids_friendly": getattr(request, "kids_friendly", None),
+        "dietary_restrictions": getattr(request, "dietary_restrictions", None),
+        "target_place": getattr(request, "target_place", None),
+        "target_day": getattr(request, "target_day", None),
     }
+
+    initial_state = {k: v for k, v in raw_state.items() if v is not None}
 
     logger.info(f"Running travel graph with thread_id={thread_id}, user_id={user_id}")
 
@@ -1639,10 +1841,11 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
     user_id = str(user.id) if user else None
     config = {"configurable": {"thread_id": thread_id, "db": db, "user_id": user_id}}
 
-    initial_state: TravelState = {
+    raw_state: TravelState = {
         "message": request.message,
         "forced_intent": getattr(request, "intent", None),
         "destination": getattr(request, "destination", None),
+        "destinations": getattr(request, "destinations", None),
         "budget": request.budget,
         "traveler_type": request.traveler_type,
         "cuisine": request.cuisine,
@@ -1657,7 +1860,15 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
         "meal_preference": request.meal_preference,
         "crowd_aware": request.crowd_aware,
         "crowd_precision": request.crowd_precision,
+        "interests": getattr(request, "interests", None),
+        "activity_level": getattr(request, "activity_level", None),
+        "kids_friendly": getattr(request, "kids_friendly", None),
+        "dietary_restrictions": getattr(request, "dietary_restrictions", None),
+        "target_place": getattr(request, "target_place", None),
+        "target_day": getattr(request, "target_day", None),
     }
+    
+    initial_state = {k: v for k, v in raw_state.items() if v is not None}
 
     logger.info(f"[STREAM] Running with thread_id={thread_id}, user_id={user_id}")
 

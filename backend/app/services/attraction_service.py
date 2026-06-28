@@ -37,11 +37,19 @@ def save_attractions_to_db(db: Session, attractions_data: List[Dict[str, Any]], 
         db.rollback()
         print(f"Error saving attractions to DB: {e}")
 
-def search_attractions(destination: str) -> List[Dict[str, Any]]:
+def search_attractions(
+    destination: str,
+    interests: Optional[str] = None,
+    activity_level: Optional[str] = None,
+    kids_friendly: Optional[bool] = None
+) -> List[Dict[str, Any]]:
     """Searches for top attractions in a city using SerpAPI's Google Maps engine.
     
     Args:
         destination: City or place name to search attractions in.
+        interests: Optional keywords like 'history', 'nature', etc.
+        activity_level: Optional 'high' or 'low'.
+        kids_friendly: True to filter for family-friendly places.
     
     Returns:
         List of attraction dicts with name, rating, description, thumbnail, and data_id.
@@ -51,9 +59,23 @@ def search_attractions(destination: str) -> List[Dict[str, Any]]:
         print("Attraction search error: SERPAPI_KEY not configured")
         return []
 
+    query_parts = ["top rated"]
+    if kids_friendly:
+        query_parts.append("family friendly kids")
+    if interests:
+        query_parts.append(interests)
+    if activity_level == "high":
+        query_parts.append("active outdoor")
+    elif activity_level == "low":
+        query_parts.append("relaxed indoor")
+    query_parts.append("attractions in")
+    query_parts.append(destination)
+    
+    query_str = " ".join(query_parts)
+
     params = {
         "engine": "google_maps",
-        "q": f"top rated attractions in {destination}",
+        "q": query_str,
         "type": "search",
         "hl": "en",
         "gl": "in",

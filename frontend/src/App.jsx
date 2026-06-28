@@ -32,11 +32,15 @@ export default function App() {
   const [lastMessage, setLastMessage] = useState('')
   const [lastIntent, setLastIntent] = useState(null)
   const [expandedRoute, setExpandedRoute] = useState(null)
-  const [numDays, setNumDays] = useState(3)
+  const [numDays, setNumDays] = useState('')
   const [pacing, setPacing] = useState('')
   const [activeDay, setActiveDay] = useState(1)
   const [itineraryData, setItineraryData] = useState(null)
   const [mealPreference, setMealPreference] = useState('')
+  const [interests, setInterests] = useState('')
+  const [activityLevel, setActivityLevel] = useState('')
+  const [kidsFriendly, setKidsFriendly] = useState(false)
+  const [dietaryRestrictions, setDietaryRestrictions] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null)
   const [savedItems, setSavedItems] = useState([])
@@ -161,7 +165,18 @@ export default function App() {
       setChatHistory(data.messages || [])
       setDestination(data.destination || 'Explore')
       setLatestData(null)
-      setItineraryData(null)
+      
+      // Auto-load the most recent itinerary if one exists in this chat
+      const messages = data.messages || []
+      const lastItineraryMsg = [...messages].reverse().find(m => m.itinerary)
+      
+      if (lastItineraryMsg) {
+        setItineraryData(lastItineraryMsg.itinerary)
+        setActiveTab('Itinerary')
+      } else {
+        setItineraryData(null)
+        setActiveTab('Hotels')
+      }
     } catch (err) {
       console.error('Failed to load session:', err)
     }
@@ -295,6 +310,10 @@ export default function App() {
         meal_preference: mealPreference || null,
         crowd_aware: crowdAware,
         crowd_precision: crowdAware ? crowdPrecision : null,
+        interests: interests || null,
+        activity_level: activityLevel || null,
+        kids_friendly: kidsFriendly || null,
+        dietary_restrictions: dietaryRestrictions || null,
         conversation_history: chatHistory
           .filter(m => m.content)
           .map(m => ({ role: m.role === 'ai' ? 'assistant' : m.role, content: m.content }))
@@ -315,6 +334,7 @@ export default function App() {
       let buffer = ''
       let streamedText = ''
       let firstTokenReceived = false
+      let wasMissingInfo = false
 
       // Add placeholder AI message that we'll update with streamed tokens
       const aiMsgIndex = { current: -1 }
@@ -369,6 +389,7 @@ export default function App() {
                   setMissingInfo(data.missing_info)
                   setLastMessage(text)
                   setLoading(false)
+                  wasMissingInfo = true
                   return
                 }
 
@@ -412,6 +433,7 @@ export default function App() {
                       show_attractions_prompt: data.show_attractions_prompt,
                       show_restaurants_prompt: data.show_restaurants_prompt,
                       show_events_prompt: data.show_events_prompt,
+                      ...(data.itinerary && { itinerary: data.itinerary })
                     }
                   }
                   const newHistory = [...updated]
@@ -448,20 +470,26 @@ export default function App() {
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I failed to connect to the backend.' }])
     } finally {
       setLoading(false)
-      // Reset per-query preferences so next search prompts fresh
-      setBudget('')
-      setTravelerType('')
-      setCuisine('')
-      setAdults(2)
-      setCheckIn('')
-      setCheckOut('')
-      setStartLocation('')
-      setEndLocation('')
-      setTravelMode('')
-      setNumDays(3)
-      setPacing('')
-      setMealPreference('')
-      setCrowdAware(null)
+      // Reset per-query preferences so next search prompts fresh, UNLESS we need missing info
+      if (!wasMissingInfo) {
+        setBudget('')
+        setTravelerType('')
+        setCuisine('')
+        setAdults(2)
+        setCheckIn('')
+        setCheckOut('')
+        setStartLocation('')
+        setEndLocation('')
+        setTravelMode('')
+        setNumDays('')
+        setPacing('')
+        setMealPreference('')
+        setCrowdAware(null)
+        setInterests('')
+        setActivityLevel('')
+        setKidsFriendly(false)
+        setDietaryRestrictions('')
+      }
     }
   }
 
@@ -807,6 +835,56 @@ export default function App() {
                     )}
                   </div>
                 )}
+
+                {(missingInfo.includes('num_days') || missingInfo.includes('pacing') || missingInfo.includes('meal_preference')) && (
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#fff' }}>✨ Optional Preferences</h4>
+                    
+                    <div className="form-group">
+                      <label>Specific Interests / Vibes</label>
+                      <input 
+                        type="text" 
+                        value={interests} 
+                        onChange={e => setInterests(e.target.value)} 
+                        placeholder="e.g. history, art, nature, nightlife" 
+                      />
+                    </div>
+                    
+                    <div className="form-group" style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label>Activity Level</label>
+                        <select value={activityLevel} onChange={e => setActivityLevel(e.target.value)}>
+                          <option value="">Any</option>
+                          <option value="high">High (Hiking, walking)</option>
+                          <option value="low">Low (Museums, scenic drives)</option>
+                        </select>
+                      </div>
+                      
+                      <div style={{ flex: 1 }}>
+                        <label>Dietary Restrictions</label>
+                        <input 
+                          type="text" 
+                          value={dietaryRestrictions} 
+                          onChange={e => setDietaryRestrictions(e.target.value)} 
+                          placeholder="e.g. Vegan, Halal" 
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: '4px 0' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={kidsFriendly} 
+                          onChange={e => setKidsFriendly(e.target.checked)} 
+                          style={{ width: '16px', height: '16px', margin: 0 }}
+                        />
+                        <span>👨‍👩‍👧‍👦 Prioritize Kids/Family Friendly Places</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
                 <button type="submit" className="modal-btn" style={{ marginTop: '16px', width: '100%', background: '#3b82f6', color: 'white', padding: '10px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Apply & Continue</button>
               </form>
             </div>
@@ -878,6 +956,19 @@ export default function App() {
                         style={{ background: 'rgba(139, 92, 246, 0.2)', border: '1px solid #8b5cf6', color: '#a78bfa', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
                       >
                         📅 Show local events
+                      </button>
+                    </div>
+                  )}
+                  {msg.role === 'ai' && msg.itinerary && (
+                    <div style={{ marginTop: '12px' }}>
+                      <button
+                        onClick={() => {
+                          setItineraryData(msg.itinerary)
+                          setActiveTab('Itinerary')
+                        }}
+                        style={{ background: 'rgba(168, 85, 247, 0.2)', border: '1px solid #a855f7', color: '#c084fc', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      >
+                        🗺️ View Itinerary
                       </button>
                     </div>
                   )}

@@ -65,6 +65,9 @@ RESPONSE MODE — CHOOSE ONE:
 - Only include sections for which you have actual information. Don't fabricate sections with no data.
 
 GENERAL RULES (both modes):
+- **Primarily use facts from the provided context below.** Clearly ground your answer in the retrieved context.
+- If the context contains relevant information, use it to answer even if it doesn't perfectly match the question — make reasonable inferences.
+- If the context truly contains NO relevant information at all, briefly say so and provide a short helpful answer based on general travel knowledge, clearly marked as general advice.
 - Use the conversation history (if any) to understand references like "there", "that place", etc.
 - Keep each point focused and informative
 - NEVER dump information as a wall of text — always use bullet points or short lines
@@ -111,6 +114,9 @@ RESPONSE MODE — CHOOSE ONE:
 - Only include sections for which you have actual information. Don't fabricate sections with no data.
 
 GENERAL RULES (both modes):
+- **Primarily use facts from the provided context below.** Clearly ground your answer in the retrieved context.
+- If the context contains relevant information, use it to answer even if it doesn't perfectly match the question — make reasonable inferences.
+- If the context truly contains NO relevant information at all, briefly say so and provide a short helpful answer based on general travel knowledge, clearly marked as general advice.
 - Use the conversation history (if any) to understand references like "there", "that place", etc.
 - Keep each point focused and informative
 - NEVER dump information as a wall of text — always use bullet points or short lines

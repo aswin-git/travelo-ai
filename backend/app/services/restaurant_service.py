@@ -41,17 +41,29 @@ def save_restaurants_to_db(db: Session, restaurants_data: List[Dict[str, Any]], 
 
 import re
 
-def search_restaurants(destination: str, cuisine: Optional[str] = None) -> List[Dict[str, Any]]:
+def search_restaurants(
+    destination: str,
+    cuisine: Optional[str] = None,
+    dietary_restrictions: Optional[str] = None,
+    kids_friendly: Optional[bool] = None
+) -> List[Dict[str, Any]]:
     """Searches for restaurants and applies a cuisine-matching and rating scoring engine."""
     api_key = settings.SERPAPI_KEY
     if not api_key:
         print("Restaurant search error: SERPAPI_KEY not configured")
         return []
 
-    # If cuisine is specified, append it to the search query for better SerpAPI results
-    query_str = f"top rated restaurants in {destination}"
+    query_parts = ["top rated"]
+    if kids_friendly:
+        query_parts.append("family friendly")
+    if dietary_restrictions:
+        query_parts.append(dietary_restrictions)
     if cuisine:
-        query_str = f"top rated {cuisine} restaurants in {destination}"
+        query_parts.append(cuisine)
+    query_parts.append("restaurants in")
+    query_parts.append(destination)
+    
+    query_str = " ".join(query_parts)
 
     params = {
         "engine": "google_maps",
