@@ -13,9 +13,9 @@ collection = chroma_client.get_or_create_collection(name="places_collection")
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 def add_document(doc_id: str, text: str, metadata: dict):
-    """Embeds and upserts a document to ChromaDB."""
+    """Embeds and adds a document to ChromaDB."""
     embedding = embedding_model.encode(text).tolist()
-    collection.upsert(
+    collection.add(
         ids=[doc_id],
         embeddings=[embedding],
         documents=[text],

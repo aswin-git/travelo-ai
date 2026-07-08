@@ -37,36 +37,33 @@ logger = get_logger(__name__)
 CHROMA_SIMILARITY_THRESHOLD = 0.5
 
 
-def _retrieve_context(place_name: str, question: str, db) -> str:
+def _retrieve_context(place_name: str, db) -> str:
     """Replays the retrieval step from process_chat_query to capture context.
 
     Returns the context string exactly as the RAG pipeline would build it
     (minus weather, which is runtime-only and not relevant for eval).
-
-    Uses n_results=5 and queries ChromaDB with the user's question to match
-    production retrieval behavior in rag_service.process_chat_query.
     """
     existing_place = get_place_by_name(db, place_name)
 
     if existing_place:
-        context = existing_place.description or ""
-
-        # Mirror production: fetch up to 5 chunks using the question and join them
         try:
-            chroma_results = query_documents(question, n_results=5)
+            chroma_results = query_documents(place_name)
             if (
                 chroma_results
                 and chroma_results.get("documents")
                 and chroma_results["documents"][0]
             ):
-                docs = chroma_results["documents"][0]
-                retrieved_facts = "\n\n".join(docs)
-                context = f"=== General Description ===\n{context}\n\n=== Specific Retrieved Facts ===\n{retrieved_facts}"
-                logger.info(f"Retrieved {len(docs)} chunks from ChromaDB for query: '{question}'")
-        except Exception:
-            logger.warning(f"ChromaDB query failed for '{question}', falling back to DB description")
+                distances = chroma_results.get("distances", [[]])[0]
+                best_score = distances[0] if distances else 0
 
-        return context
+                if best_score >= CHROMA_SIMILARITY_THRESHOLD:
+                    return chroma_results["documents"][0][0]
+                else:
+                    return existing_place.description or ""
+            else:
+                return existing_place.description or ""
+        except Exception:
+            return existing_place.description or ""
 
     return ""
 
@@ -90,7 +87,7 @@ async def _collect_rag_outputs(samples: list[dict]) -> list[dict]:
             logger.info(f"[{i+1}/{len(samples)}] Evaluating: '{question}' (place={place_name})")
 
             # 1. Capture retrieval context (mirrors the retrieval step in process_chat_query)
-            context = _retrieve_context(place_name, question, db)
+            context = _retrieve_context(place_name, db)
 
             # 2. Run the full RAG pipeline to get the generated answer
             try:
@@ -188,7 +185,7 @@ def run_evaluation(
     metric_names = [
         "faithfulness",
         "answer_relevancy",
-        "llm_context_precision_with_reference",
+        "context_precision",
         "context_recall",
     ]
 

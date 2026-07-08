@@ -73,6 +73,7 @@ class TravelState(TypedDict, total=False):
     destination: Optional[str]
     destinations: Optional[list]  # Multi-city array
     hotel_name: Optional[str]
+    hotel_type: Optional[str]
     place_type: str
     check_in: Optional[str]
     check_out: Optional[str]
@@ -216,6 +217,7 @@ async def classify_intent(state: TravelState) -> dict:
 - "destination": the primary city or place name mentioned
 - "destinations": list of strings (ONLY if multiple cities/destinations are mentioned, e.g. ["Kochi", "Munnar"])
 - "hotel_name": the specific hotel name
+- "hotel_type": the type of hotel requested (e.g. "5 star", "3 star", "resort", "hostel")
 - "place_type": one of ["city", "poi"]
 - "check_in": date
 - "check_out": date
@@ -322,6 +324,7 @@ User message: {message}"""
             destinations = [destination]
 
     hotel_name = parsed.get("hotel_name") or state.get("hotel_name")
+    hotel_type = parsed.get("hotel_type") or state.get("hotel_type")
     place_type = parsed.get("place_type", "poi")
 
     logger.info(
@@ -434,6 +437,7 @@ User message: {message}"""
         "destination": destination,
         "destinations": destinations,
         "hotel_name": hotel_name,
+        "hotel_type": hotel_type,
         "place_type": place_type,
         "check_in": check_in,
         "check_out": check_out,
@@ -579,7 +583,8 @@ async def handle_hotel_search(state: TravelState, config: RunnableConfig) -> dic
         check_out=state.get("check_out"),
         adults=state.get("adults") or 2,
         budget=state.get("budget"),
-        traveler_type=state.get("traveler_type")
+        traveler_type=state.get("traveler_type"),
+        hotel_type=state.get("hotel_type")
     )
 
     if hotels_data:
@@ -1368,7 +1373,7 @@ Your job is ONLY to:
 3. Add a hotel/accommodation recommendation at the END of each day (category: "hotel")
 4. Write vivid 1-2 sentence descriptions
 5. Estimate realistic duration_minutes for each stop
-6. Add travel_to_next times between consecutive stops
+6. Add travel_to_next times between consecutive stops (estimate ETA using the provided lat/lon coordinates)
 
 SCHEDULING RULES (strictly enforced):
 - Day start: 08:00 AM with Breakfast (30-45 min)

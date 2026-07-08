@@ -50,7 +50,8 @@ def search_hotels(
     check_out: Optional[str] = None,
     adults: int = 2,
     budget: Optional[int] = None,
-    traveler_type: Optional[str] = None
+    traveler_type: Optional[str] = None,
+    hotel_type: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """Searches for hotels using SerpAPI and applies a 6-factor scoring engine."""
     api_key = settings.SERPAPI_KEY
@@ -65,9 +66,11 @@ def search_hotels(
         check_in_date = date.fromisoformat(check_in)
         check_out = (check_in_date + timedelta(days=2)).strftime("%Y-%m-%d")
 
+    query_prefix = f"{hotel_type} hotels" if hotel_type else "Hotels"
+    
     params = {
         "engine": "google_hotels",
-        "q": f"Hotels in {destination}",
+        "q": f"{query_prefix} in {destination}",
         "check_in_date": check_in,
         "check_out_date": check_out,
         "adults": str(adults),
