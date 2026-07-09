@@ -172,7 +172,13 @@ async def classify_intent(state: TravelState) -> dict:
     
     Includes conversation history so the LLM can resolve references like
     'there', 'that city', 'the same place', etc.
+    
+    Uses a keyword pre-check for obvious itinerary requests to avoid LLM
+    non-determinism, and a confidence score to ask the user to confirm when
+    the LLM is not sure.
     """
+    import re as _re
+
     message = state["message"]
     forced_intent = state.get("forced_intent")
 
@@ -183,11 +189,30 @@ async def classify_intent(state: TravelState) -> dict:
             "intent": forced_intent,
             "destination": state.get("destination"),
             "hotel_name": state.get("hotel_name"),
-            "place_type": "city"
+            "place_type": "city",
+            "confidence": 1.0,
         }
     else:
         history = state.get("conversation_history") or []
         logger.info("Detecting intent and extracting info using Gemini...")
+
+        # ── Keyword pre-check: force itinerary_search for obvious plan requests ──
+        # This prevents the LLM from flipping between travel_question/place_info
+        # when the user clearly wants an itinerary.
+        _msg_lower = message.lower()
+        _itinerary_strong_keywords = [
+            r"\bplan\b.*\btrip\b", r"\btrip\b.*\bplan\b",
+            r"\bplan\b.*\btour\b", r"\btour\b.*\bplan\b",
+            r"\bitinerary\b", r"\bday[- ]?wise\b",
+            r"\bdetailed plan\b", r"\btravel plan\b",
+            r"\bschedule.*trip\b", r"\btrip.*schedule\b",
+            r"\b\d+[- ]?day\b.*\b(?:trip|plan|tour|itinerary)\b",
+            r"\bplan.*\b\d+[- ]?day\b",
+            r"\bplanning a trip\b", r"\bplan a visit\b",
+        ]
+        _is_itinerary_keyword_match = any(
+            _re.search(pat, _msg_lower) for pat in _itinerary_strong_keywords
+        )
 
         # Build history context for coreference resolution
         history_block = ""
@@ -213,6 +238,10 @@ async def classify_intent(state: TravelState) -> dict:
     - "itinerary_search"
     - "search_add_to_itinerary" (user asks to add a specific place to their existing itinerary)
     - "confirm_add_to_itinerary" (user confirms "yes" to add the previously found place to their itinerary (only if awaiting_confirmation is True))
+- "confidence": a float between 0.0 and 1.0 representing how confident you are in the chosen intent.
+    - 1.0 = absolutely certain (e.g. "hotels in Delhi" → hotel_search)
+    - 0.7-0.9 = fairly confident
+    - below 0.7 = uncertain, could be multiple intents
 - "clarify_question": (ONLY when intent is "clarify") A friendly question asking the user what they'd like to do.
 - "destination": the primary city or place name mentioned
 - "destinations": list of strings (ONLY if multiple cities/destinations are mentioned, e.g. ["Kochi", "Munnar"])
@@ -228,10 +257,10 @@ async def classify_intent(state: TravelState) -> dict:
 - "start_location": string
 - "end_location": string
 - "travel_mode": one of ["driving", "transit", "walking", "flight"]
-- "num_days": number
-- "pacing": one of ["relaxed", "packed"]
-- "meal_preference": one of ["fixed", "flexible"]
-- "crowd_aware": boolean
+- "num_days": number (ONLY set this if the user EXPLICITLY mentions a number of days in THIS message. Do NOT guess or infer.)
+- "pacing": one of ["relaxed", "packed"] (ONLY set if the user EXPLICITLY states pacing preference. Do NOT guess.)
+- "meal_preference": one of ["fixed", "flexible"] (ONLY set if explicitly mentioned)
+- "crowd_aware": boolean (ONLY set if explicitly mentioned)
 - "interests": string
 - "activity_level": one of ["high", "low"]
 - "kids_friendly": boolean
@@ -243,6 +272,26 @@ async def classify_intent(state: TravelState) -> dict:
     - If user says "what about hotels there?" after discussing Paris, effective_query = "what about hotels in Paris?"
     - If user message is already a complete question, effective_query = the user message as-is (with typos corrected)
     - ALWAYS produce a complete, self-contained question that makes sense without conversation history
+
+CRITICAL — ITINERARY vs TRAVEL QUESTION:
+When the user asks for a "plan", "itinerary", "schedule", "day-wise plan", or "detailed plan" for a trip:
+- This is ALWAYS "itinerary_search", NOT "travel_question"
+- "travel_question" is for factual questions like "is it safe?", "what's the best season?", "how to reach?", "is it feasible?"
+- "itinerary_search" is for structured day-by-day planning requests
+- When in doubt between these two, prefer "itinerary_search" ONLY if the user explicitly mentions planning, scheduling, or organizing a trip
+- Just mentioning a new destination does NOT mean itinerary_search. "What about Munnar?" after a travel question is still a travel question about Munnar.
+
+CRITICAL — "WHAT ABOUT X?" FOLLOW-UPS (intent inheritance):
+When the user says "what about X?", "how about X?", "and X?", "what about going to X?" etc.:
+1. This is a FOLLOW-UP to the PREVIOUS exchange, NOT a brand new request
+2. INHERIT the intent from the IMMEDIATELY PREVIOUS user-assistant exchange
+3. Only change the destination/entity to the new one mentioned
+Examples:
+- Previous: user asked "is it feasible to go by bike to Kodaikanal?" (travel_question) → User now says "what about Munnar?" → intent = "travel_question", destination = "Munnar", effective_query = "is it feasible to go by bike to Munnar?"
+- Previous: user asked "hotels in Delhi" (hotel_search) → User now says "what about Mumbai?" → intent = "hotel_search", destination = "Mumbai"
+- Previous: user asked "attractions in Goa" → User now says "and restaurants?" → intent = "restaurant_search", same destination
+- Previous: user created an itinerary for Kodaikanal → User now says "what about Munnar?" → This is AMBIGUOUS. Use "clarify" and ask if they want an itinerary for Munnar or information about Munnar.
+Do NOT assume "what about X?" means "create an itinerary for X" just because an itinerary was previously created for a different destination.
 
 CRITICAL — ANSWERING FOLLOW-UP QUESTIONS:
 When the assistant previously asked the user for specific information (like a destination, dates, preferences, etc.) and the user's current message answers that question:
@@ -278,6 +327,11 @@ CRITICAL — WHEN TO USE "clarify":
 - DO NOT use clarify for clear-cut requests like "hotels in Delhi", "tell me about Jaipur", "plan a 3-day trip to Kerala"
 - DO NOT use clarify when the user is answering a follow-up question from the assistant (inherit the original intent instead)
 
+CRITICAL — DO NOT GUESS ITINERARY PARAMETERS:
+- Only set num_days, pacing, meal_preference, crowd_aware if the user EXPLICITLY states them in their message.
+- If the user says "plan a trip to Goa" without mentioning how many days, do NOT set num_days. Leave it as null.
+- The system will ask the user for missing details via a form — do NOT fill in defaults.
+
 Also handle TYPOS intelligently: if user writes "kooch" but likely means "Kochi", or "bnaglore" for "Bangalore", resolve to the correct spelling.
 
 {history_block}
@@ -297,8 +351,55 @@ User message: {message}"""
                 "source": "system",
             }
 
+        # ── Keyword override: if strong itinerary keywords matched, force intent ──
+        llm_intent = parsed.get("intent", "place_info")
+        if _is_itinerary_keyword_match and llm_intent in ("travel_question", "place_info", "general_chat"):
+            logger.info(
+                f"Keyword pre-check overriding LLM intent '{llm_intent}' → 'itinerary_search' "
+                f"(matched itinerary keywords in: {message[:80]})"
+            )
+            parsed["intent"] = "itinerary_search"
+            parsed["confidence"] = 0.95  # High confidence from keyword match
+
     intent = parsed.get("intent", "place_info")
+    confidence = parsed.get("confidence", 0.85)  # Default to fairly confident
     clarify_question = parsed.get("clarify_question")
+
+    # ── Low-confidence check: ask user to confirm when LLM is uncertain ──
+    # If confidence < 0.7 and intent is not already "clarify", convert to a
+    # confirmation prompt so the user can verify.
+    if confidence < 0.7 and intent != "clarify" and not forced_intent:
+        intent_labels = {
+            "itinerary_search": "create a day-by-day travel itinerary",
+            "travel_question": "answer a travel question",
+            "hotel_search": "search for hotels",
+            "restaurant_search": "search for restaurants",
+            "attraction_search": "search for attractions",
+            "event_search": "search for events",
+            "place_info": "tell you about a destination",
+            "directions_search": "get directions",
+            "destination_discovery": "discover destinations",
+        }
+        readable_intent = intent_labels.get(intent, intent.replace("_", " "))
+        destination_part = parsed.get("destination")
+        dest_text = f" for **{destination_part}**" if destination_part else ""
+
+        confirm_q = (
+            f"I think you'd like me to **{readable_intent}**{dest_text}. "
+            f"Is that right? Or would you prefer something else?\n\n"
+            f"🏨 Search for hotels, 🏛️ Show attractions, 🍽️ Find restaurants, "
+            f"🗺️ Plan an itinerary, or ℹ️ Tell you about the destination?"
+        )
+        logger.info(
+            f"Low confidence ({confidence:.2f}) for intent '{intent}' — asking user to confirm"
+        )
+        return {
+            "intent": "clarify",
+            "response_text": confirm_q,
+            "source": "clarify",
+            "destination": parsed.get("destination") or state.get("destination"),
+            "destinations": parsed.get("destinations") or state.get("destinations"),
+        }
 
     # Handle multi-city vs single city fallback
     parsed_destinations = parsed.get("destinations")
@@ -351,24 +452,50 @@ User message: {message}"""
     # Remove the strict error block for missing destination here. We will handle it via missing_info.
     requires_dest = ["hotel_search", "restaurant_search", "attraction_search", "event_search", "itinerary_search", "place_info"]
 
+    # ── Reset itinerary-specific fields for NEW itinerary requests ──
+    # When a new itinerary_search starts, don't inherit stale values from
+    # previous itinerary (num_days, pacing, start_location, meal_preference,
+    # crowd_aware). Only use values the LLM extracted from THIS message.
+    # This ensures the missing-info popup always fires for fresh requests.
+    _is_new_itinerary = (intent == "itinerary_search" and not forced_intent)
+
     budget = parsed.get("budget") or state.get("budget")
     traveler_type = parsed.get("traveler_type") or state.get("traveler_type")
     cuisine = parsed.get("cuisine") or state.get("cuisine")
     adults = parsed.get("adults") or state.get("adults")
     check_in = parsed.get("check_in") or state.get("check_in")
     check_out = parsed.get("check_out") or state.get("check_out")
-    start_location = parsed.get("start_location") or state.get("start_location")
-    end_location = parsed.get("end_location") or state.get("end_location")
-    travel_mode = parsed.get("travel_mode") or state.get("travel_mode")
-    num_days = parsed.get("num_days") or state.get("num_days")
-    pacing = parsed.get("pacing") or state.get("pacing")
-    meal_preference = parsed.get("meal_preference") or state.get("meal_preference")
-    crowd_aware = parsed.get("crowd_aware") if parsed.get("crowd_aware") is not None else state.get("crowd_aware")
-    crowd_precision = state.get("crowd_precision")  # Only set via frontend form
     interests = parsed.get("interests") or state.get("interests")
     activity_level = parsed.get("activity_level") or state.get("activity_level")
     kids_friendly = parsed.get("kids_friendly") if parsed.get("kids_friendly") is not None else state.get("kids_friendly")
     dietary_restrictions = parsed.get("dietary_restrictions") or state.get("dietary_restrictions")
+
+    # For itinerary-specific fields: only fall back to state if NOT a new itinerary request
+    if _is_new_itinerary:
+        # Only use what the LLM extracted from THIS message
+        num_days = parsed.get("num_days")
+        pacing = parsed.get("pacing")
+        start_location = parsed.get("start_location")
+        end_location = parsed.get("end_location")
+        travel_mode = parsed.get("travel_mode")
+        meal_preference = parsed.get("meal_preference")
+        crowd_aware = parsed.get("crowd_aware")  # Will be None if not mentioned → triggers popup
+        crowd_precision = None  # Reset — will be set via popup
+        logger.info(
+            f"New itinerary request detected — reset itinerary fields. "
+            f"Extracted from message: num_days={num_days}, pacing={pacing}, "
+            f"start_location={start_location}, meal_preference={meal_preference}, "
+            f"crowd_aware={crowd_aware}"
+        )
+    else:
+        start_location = parsed.get("start_location") or state.get("start_location")
+        end_location = parsed.get("end_location") or state.get("end_location")
+        travel_mode = parsed.get("travel_mode") or state.get("travel_mode")
+        num_days = parsed.get("num_days") or state.get("num_days")
+        pacing = parsed.get("pacing") or state.get("pacing")
+        meal_preference = parsed.get("meal_preference") or state.get("meal_preference")
+        crowd_aware = parsed.get("crowd_aware") if parsed.get("crowd_aware") is not None else state.get("crowd_aware")
+        crowd_precision = state.get("crowd_precision")  # Only set via frontend form
     
     target_place = parsed.get("target_place") or state.get("target_place")
     target_day = parsed.get("target_day") or state.get("target_day")
@@ -1813,6 +1940,7 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
         "show_restaurants_prompt",
         "show_events_prompt",
         "missing_info",
+        "intent",
     ):
         if result.get(key) is not None:
             output[key] = result[key]
@@ -1924,6 +2052,7 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
             "response": state_after_intent["error"],
             "source": state_after_intent.get("source", "system"),
             "missing_info": state_after_intent.get("missing_info"),
+            "intent": state_after_intent.get("intent"),
         }}
         return
 
@@ -1944,6 +2073,7 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
             "response": state_after_intent.get("error", "I need a few more details."),
             "source": "system",
             "missing_info": state_after_intent["missing_info"],
+            "intent": state_after_intent.get("intent"),
         }}
         return
 

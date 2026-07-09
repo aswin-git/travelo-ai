@@ -79,8 +79,10 @@ substitutions:
   _REGION: asia-south1
   _REGISTRY: asia-south1-docker.pkg.dev/${PROJECT_ID}/travelo-ai
   _BACKEND_URL: https://travelo-backend-HASH-uc.a.run.app  # Update after first deploy
-  _SUPABASE_URL: https://qbolfgnnifmnixpajjgn.supabase.co
-  _SUPABASE_ANON_KEY: sb_publishable_vv7lVtRFnngS7Y31rL_Txg_U42zP6w_
+  # ⚠️ Set these via Cloud Build trigger substitution variables (GCP Console),
+  # NOT here. Go to: Cloud Build → Triggers → Edit → Substitution variables
+  _SUPABASE_URL: ''      # Set in trigger config
+  _SUPABASE_ANON_KEY: '' # Set in trigger config
 
 timeout: 1800s  # 30 min (PyTorch build is slow)
 

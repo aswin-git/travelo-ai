@@ -388,6 +388,9 @@ export default function App() {
                   setChatHistory(prev => prev.filter((_, idx) => idx !== aiMsgIndex.current))
                   setMissingInfo(data.missing_info)
                   setLastMessage(text)
+                  // Save the detected intent so resubmission uses it as forced_intent
+                  // (prevents classify_intent from re-running and resetting fields)
+                  if (data.intent) setLastIntent(data.intent)
                   setLoading(false)
                   wasMissingInfo = true
                   return
