@@ -6,11 +6,12 @@ from ..database import get_db
 from ..models.place_model import (
     ChatRequest, ChatResponse, PlaceResponse, HotelResult, Hotel,
     ReviewSummary, Attraction, AttractionResult, Restaurant, RestaurantResult,
-    Event, EventResult,
+    Event, EventResult, SimilarPlacesRequest, EditItineraryRequest, ItineraryResult
 )
 from ..services.graph_orchestrator import run_travel_graph, run_travel_graph_stream
 from ..services.review_service import get_and_summarize_reviews, save_summary_to_db
 from ..services.place_service import get_place_by_name
+from ..services.edit_itinerary_service import get_similar_places, insert_places_into_itinerary
 from ..auth.dependencies import get_optional_user
 from ..models.user_model import User
 from ..utils.logger import get_logger
@@ -84,6 +85,27 @@ async def chat_stream_endpoint(
         },
     )
 
+
+@router.post("/itinerary/search-similar")
+async def search_similar_endpoint(request: SimilarPlacesRequest):
+    try:
+        results = await get_similar_places(request.destination, request.query)
+        return results
+    except Exception as e:
+        logger.error(f"Error in search_similar_endpoint: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error searching similar places")
+
+@router.post("/itinerary/edit", response_model=ItineraryResult)
+async def edit_itinerary_endpoint(request: EditItineraryRequest):
+    try:
+        updated_itinerary = await insert_places_into_itinerary(
+            request.existing_itinerary.model_dump(),
+            request.added_places
+        )
+        return ItineraryResult(**updated_itinerary)
+    except Exception as e:
+        logger.error(f"Error in edit_itinerary_endpoint: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error editing itinerary")
 
 # FIX 3: Changed from POST to GET — this is a read-only fetch operation
 @router.get("/place/search", response_model=PlaceResponse)

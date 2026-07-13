@@ -107,6 +107,7 @@ class TravelState(TypedDict, total=False):
     meal_preference: Optional[str]
     crowd_aware: Optional[bool]
     crowd_precision: Optional[str]  # "precise" or "approximate"
+    weather_aware: Optional[bool]
     interests: Optional[str]
     activity_level: Optional[str]
     kids_friendly: Optional[bool]
@@ -233,6 +234,7 @@ async def classify_intent(state: TravelState) -> dict:
     - "restaurant_search"
     - "event_search"
     - "place_info"
+    - "destination_explore" (user mentions a destination they're considering/planning to visit, but hasn't explicitly asked for a structured itinerary)
     - "destination_discovery"
     - "directions_search"
     - "itinerary_search"
@@ -272,6 +274,22 @@ async def classify_intent(state: TravelState) -> dict:
     - If user says "what about hotels there?" after discussing Paris, effective_query = "what about hotels in Paris?"
     - If user message is already a complete question, effective_query = the user message as-is (with typos corrected)
     - ALWAYS produce a complete, self-contained question that makes sense without conversation history
+
+CRITICAL — DESTINATION_EXPLORE vs ITINERARY_SEARCH:
+When the user MENTIONS a destination they're considering visiting but does NOT explicitly ask for a structured plan:
+- "I am planning to go to Goa" → "destination_explore" (they're exploring, NOT requesting an itinerary)
+- "thinking about visiting Manali" → "destination_explore"
+- "I want to go to Kerala" → "destination_explore"
+- "planning to visit Jaipur next month" → "destination_explore"
+These are EXPLORATORY statements. The user wants to learn about the destination first.
+
+Only use "itinerary_search" when the user EXPLICITLY requests a structured plan:
+- "plan a trip to Goa" → "itinerary_search" (explicit "plan a trip")
+- "create an itinerary for Kerala" → "itinerary_search"
+- "make a 3-day plan for Manali" → "itinerary_search"
+- "day-wise schedule for Jaipur" → "itinerary_search"
+- "help me plan my trip" → "itinerary_search"
+The key difference: "planning to go" (exploring) vs "plan a trip" (requesting action).
 
 CRITICAL — ITINERARY vs TRAVEL QUESTION:
 When the user asks for a "plan", "itinerary", "schedule", "day-wise plan", or "detailed plan" for a trip:
@@ -322,10 +340,11 @@ Do NOT treat corrections as a brand new generic query about the place.
 
 CRITICAL — WHEN TO USE "clarify":
 - Message could reasonably map to 2+ different intents and you're not 80%+ confident
-- User mentions a destination but doesn't specify what they want (e.g. "Kochi", "help me with Goa", "I'm going to Mumbai next week") AND there is NO prior intent in the conversation history to inherit
+- User says JUST a destination name with no context (e.g. "Kochi", "Goa") AND there is NO prior intent in the conversation history to inherit
 - User says "yes"/"no"/"ok" but there's no clear previous question in conversation history
 - DO NOT use clarify for clear-cut requests like "hotels in Delhi", "tell me about Jaipur", "plan a 3-day trip to Kerala"
 - DO NOT use clarify when the user is answering a follow-up question from the assistant (inherit the original intent instead)
+- DO NOT use clarify when the user expresses intent to visit a place ("I am planning to go Goa", "thinking about visiting X") — use "destination_explore" instead
 
 CRITICAL — DO NOT GUESS ITINERARY PARAMETERS:
 - Only set num_days, pacing, meal_preference, crowd_aware if the user EXPLICITLY states them in their message.
@@ -353,7 +372,7 @@ User message: {message}"""
 
         # ── Keyword override: if strong itinerary keywords matched, force intent ──
         llm_intent = parsed.get("intent", "place_info")
-        if _is_itinerary_keyword_match and llm_intent in ("travel_question", "place_info", "general_chat"):
+        if _is_itinerary_keyword_match and llm_intent in ("travel_question", "place_info", "general_chat", "destination_explore"):
             logger.info(
                 f"Keyword pre-check overriding LLM intent '{llm_intent}' → 'itinerary_search' "
                 f"(matched itinerary keywords in: {message[:80]})"
@@ -378,6 +397,7 @@ User message: {message}"""
             "event_search": "search for events",
             "place_info": "tell you about a destination",
             "directions_search": "get directions",
+            "destination_explore": "tell you about a destination you're considering",
             "destination_discovery": "discover destinations",
         }
         readable_intent = intent_labels.get(intent, intent.replace("_", " "))
@@ -450,7 +470,7 @@ User message: {message}"""
         }
 
     # Remove the strict error block for missing destination here. We will handle it via missing_info.
-    requires_dest = ["hotel_search", "restaurant_search", "attraction_search", "event_search", "itinerary_search", "place_info"]
+    requires_dest = ["hotel_search", "restaurant_search", "attraction_search", "event_search", "itinerary_search", "place_info", "destination_explore"]
 
     # ── Reset itinerary-specific fields for NEW itinerary requests ──
     # When a new itinerary_search starts, don't inherit stale values from
@@ -481,6 +501,7 @@ User message: {message}"""
         meal_preference = parsed.get("meal_preference")
         crowd_aware = parsed.get("crowd_aware")  # Will be None if not mentioned → triggers popup
         crowd_precision = None  # Reset — will be set via popup
+        weather_aware = parsed.get("weather_aware")  # Will be None → triggers popup
         logger.info(
             f"New itinerary request detected — reset itinerary fields. "
             f"Extracted from message: num_days={num_days}, pacing={pacing}, "
@@ -496,6 +517,7 @@ User message: {message}"""
         meal_preference = parsed.get("meal_preference") or state.get("meal_preference")
         crowd_aware = parsed.get("crowd_aware") if parsed.get("crowd_aware") is not None else state.get("crowd_aware")
         crowd_precision = state.get("crowd_precision")  # Only set via frontend form
+        weather_aware = parsed.get("weather_aware") if parsed.get("weather_aware") is not None else state.get("weather_aware")
     
     target_place = parsed.get("target_place") or state.get("target_place")
     target_day = parsed.get("target_day") or state.get("target_day")
@@ -531,6 +553,7 @@ User message: {message}"""
         if not start_location: missing_info.append("itinerary_start_location")
         if not meal_preference: missing_info.append("meal_preference")
         if crowd_aware is None: missing_info.append("crowd_aware")
+        if weather_aware is None: missing_info.append("weather_aware")
 
     if intent in requires_dest and not destination and not hotel_name:
         missing_info.insert(0, "destination")
@@ -582,6 +605,7 @@ User message: {message}"""
         "effective_query": effective_query,
         "crowd_aware": crowd_aware,
         "crowd_precision": crowd_precision,
+        "weather_aware": weather_aware,
         "interests": interests,
         "activity_level": activity_level,
         "kids_friendly": kids_friendly,
@@ -1098,6 +1122,77 @@ Do NOT make up travel information. Just be friendly and helpful.
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+#  NODE: handle_destination_explore
+# ═══════════════════════════════════════════════════════════════════════════
+async def handle_destination_explore(state: TravelState, config: RunnableConfig) -> dict:
+    """Handles exploratory destination mentions (e.g. 'I am planning to go Goa').
+    
+    Gives destination highlights, tips, best time to visit, and asks
+    whether the user wants a detailed itinerary created.
+    """
+    db: Session = config["configurable"]["db"]
+    destination = state.get("destination", "")
+    history = state.get("conversation_history", [])
+    effective_query = state.get("effective_query") or state["message"]
+
+    logger.info(f"handle_destination_explore: {destination} (query: {effective_query})")
+
+    # Fetch RAG context for the destination
+    rag_context = ""
+    if destination:
+        try:
+            rag_result = await process_chat_query(db, effective_query, destination, history=history)
+            if rag_result and rag_result.get("response"):
+                rag_context = rag_result["response"][:3000]
+        except Exception as e:
+            logger.warning(f"RAG context fetch failed for destination_explore: {e}")
+
+    history_block = ""
+    if history and len(history) > 1:
+        history_text = _format_history(history[:-1])
+        history_block = f"\nPrevious conversation:\n{history_text}\n"
+
+    explore_prompt = f"""You are Travelo AI, an expert and enthusiastic travel assistant.
+
+The user is CONSIDERING visiting {destination}. They have NOT asked for a detailed itinerary yet — they're in the exploration phase.
+
+Your job is to give them an exciting, informative overview that helps them decide. Include:
+
+1. **🌟 Why Visit {destination}** — 2-3 compelling reasons to visit
+2. **🗓️ Best Time to Visit** — ideal months/seasons and why
+3. **🏖️ Top Highlights** — 4-5 must-see attractions or experiences (brief, 1 line each)
+4. **💡 Travel Tips** — 3-4 practical tips (budget, transport, food, safety, etc.)
+5. **⏱️ Ideal Duration** — how many days are recommended
+
+RULES:
+- Be enthusiastic but concise — each section should be brief and scannable
+- Use bullet points (- ) for lists
+- Use **bold** for key facts
+- Use emojis for section headers
+- Base your response on the context provided, supplement with general knowledge
+- At the END, add this line exactly: "\n\n🗺️ **Would you like me to create a detailed day-by-day itinerary for {destination}?** Just say the word!"
+
+{history_block}
+Background context about {destination}:
+{rag_context if rag_context else 'No specific context available — use your general knowledge.'}
+
+User's message: {effective_query}"""
+
+    try:
+        response = await model.generate_content_async(explore_prompt)
+        return {
+            "response_text": response.text.strip(),
+            "source": "destination_explore",
+        }
+    except Exception as e:
+        logger.error(f"Destination explore response failed: {e}", exc_info=True)
+        return {
+            "response_text": f"I'd love to tell you about {destination}! Unfortunately, I had a hiccup. Could you try again?",
+            "source": "destination_explore",
+        }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 #  NODE: handle_directions
 # ═══════════════════════════════════════════════════════════════════════════
 async def handle_directions(state: TravelState, config: RunnableConfig) -> dict:
@@ -1169,11 +1264,13 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
     kids_friendly = state.get("kids_friendly")
     dietary_restrictions = state.get("dietary_restrictions")
     cuisine = state.get("cuisine")
+    weather_aware = state.get("weather_aware", False)
 
     logger.info(
         f"Generating geo-optimized {num_days}-day {pacing} itinerary for {destination}"
         f" (origin: {start_location or 'destination center'}, meals: {meal_preference},"
-        f" crowd_aware: {crowd_aware}, precision: {crowd_precision})"
+        f" crowd_aware: {crowd_aware}, precision: {crowd_precision},"
+        f" weather_aware: {weather_aware})"
     )
 
     # ── Phase 0: Fetch user's saved items for this destination ──────────────
@@ -1273,10 +1370,10 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
 
     logger.info("Geocoding attractions + restaurants (parallel)...")
     geo_attr_future = loop.run_in_executor(
-        None, lambda: batch_geocode(attractions_raw[:10], destination, dest_lat=dest_lat, dest_lon=dest_lon)
+        None, lambda: batch_geocode(attractions_raw[:20], destination, dest_lat=dest_lat, dest_lon=dest_lon)
     )
     geo_rest_future = loop.run_in_executor(
-        None, lambda: batch_geocode(restaurants_raw[:8], destination, dest_lat=dest_lat, dest_lon=dest_lon)
+        None, lambda: batch_geocode(restaurants_raw[:20], destination, dest_lat=dest_lat, dest_lon=dest_lon)
     )
     geocoded_attractions, geocoded_restaurants = await asyncio.gather(
         geo_attr_future, geo_rest_future
@@ -1340,10 +1437,28 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
             crowd_data = batch_fetch_crowd_data(crowd_candidates)
             logger.info(f"Got crowd data for {len(crowd_data)} places")
 
+    # ── Phase 4.6: Fetch weather forecast (if weather_aware) ───────────────
+    weather_forecasts = []
+    if weather_aware:
+        from ..services.weather_service import fetch_multi_day_forecast
+        try:
+            weather_forecasts = fetch_multi_day_forecast(
+                lat=dest_lat, lon=dest_lon,
+                place_name=destination,
+                num_days=num_days,
+            )
+            if weather_forecasts:
+                logger.info(f"Fetched {len(weather_forecasts)}-day weather forecast for {destination}")
+            else:
+                logger.warning(f"No weather forecast data returned for {destination}")
+        except Exception as e:
+            logger.warning(f"Weather forecast fetch failed: {e}")
+
     # ── Phase 5: Split into days ───────────────────────────────────────────
     days_split = split_into_days(interleaved, num_days)
 
     # ── Phase 6: Build pre-ordered context for Gemini ──────────────────────
+    from ..services.routing_service import get_driving_duration_str
     # Gemini's job is now ONLY to add descriptions, timing, and cost — NOT to reorder
     day_blocks = []
     for day_idx, day_stops in enumerate(days_split, 1):
@@ -1356,6 +1471,16 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
             desc = stop.get("description", "")[:100]
             lat = stop.get("latitude", 0)
             lon = stop.get("longitude", 0)
+            thumb = stop.get("thumbnail") or ""
+
+            # Calculate OSRM travel time from previous stop
+            travel_time_str = ""
+            if stop_idx > 1:
+                prev_stop = day_stops[stop_idx - 2]
+                prev_lat = prev_stop.get("latitude", 0)
+                prev_lon = prev_stop.get("longitude", 0)
+                if lat and lon and prev_lat and prev_lon:
+                    travel_time_str = f" [Travel from prev stop: {get_driving_duration_str(prev_lat, prev_lon, lat, lon)}]"
 
             # Append crowd info if available (precise mode)
             crowd_tag = ""
@@ -1366,15 +1491,24 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
             if cat == "restaurant":
                 stop_lines.append(
                     f"  {stop_idx}. [RESTAURANT — {meal_type}] {name} "
-                    f"(Rating: {rating}{crowd_tag}) at ({lat:.4f}, {lon:.4f}): {desc}"
+                    f"(Rating: {rating}{crowd_tag}) at ({lat:.4f}, {lon:.4f}) [Thumbnail: {thumb}]{travel_time_str}: {desc}"
                 )
             else:
                 stop_lines.append(
                     f"  {stop_idx}. [ATTRACTION] {name} "
-                    f"(Rating: {rating}{crowd_tag}) at ({lat:.4f}, {lon:.4f}): {desc}"
+                    f"(Rating: {rating}{crowd_tag}) at ({lat:.4f}, {lon:.4f}) [Thumbnail: {thumb}]{travel_time_str}: {desc}"
                 )
 
-        day_blocks.append(f"Day {day_idx}:\n" + "\n".join(stop_lines))
+        # Add weather forecast header for this day
+        weather_header = ""
+        if weather_aware and day_idx <= len(weather_forecasts):
+            wf = weather_forecasts[day_idx - 1]
+            weather_header = (
+                f"  WEATHER: {wf['icon']} {wf['summary']}\n"
+                f"  WEATHER TIP: {wf['tip']}\n"
+            )
+
+        day_blocks.append(f"--- Default Grouping: Day {day_idx} (Override if user requests otherwise) ---\n{weather_header}" + "\n".join(stop_lines))
 
     pre_ordered_context = "\n\n".join(day_blocks)
 
@@ -1482,6 +1616,26 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
         '— use the crowd tags from the route data or estimate based on place type and time'
     ) if crowd_aware else 'crowd_status should be null for all slots'
 
+    # Build weather awareness hint for prompt
+    weather_hint = ""
+    if weather_aware and weather_forecasts:
+        weather_hint = (
+            "\nWEATHER-AWARE PLANNING (ENABLED):\n"
+            "Weather forecasts are provided in the WEATHER line above each day's stops.\n"
+            "You MUST:\n"
+            "1. Include a \"weather_summary\" field in each day object (copy the WEATHER line value)\n"
+            "2. Include a \"weather_tip\" field in each day object (copy the WEATHER TIP line value)\n"
+            "3. If rain/thunderstorm is predicted, prioritize INDOOR attractions in the morning and schedule outdoor ones for clearer periods\n"
+            "4. If extreme heat (>35°C), schedule outdoor activities for early morning or late afternoon, and suggest midday breaks\n"
+            "5. If fog/mist is predicted, note in descriptions that scenic viewpoints may have limited visibility\n"
+            "6. Mention weather context naturally in slot descriptions (e.g. 'Perfect sunny morning for...' or 'Head indoors to escape the rain...')\n"
+        )
+    elif weather_aware:
+        weather_hint = (
+            "\nWEATHER-AWARE PLANNING (ENABLED but no forecast data available):\n"
+            "Set weather_summary and weather_tip to null for all days.\n"
+        )
+
     itinerary_prompt = f"""You are an expert travel planner building a detailed, realistic {num_days}-day itinerary for {destination}.
 {origin_hint}
 {budget_hint}
@@ -1491,16 +1645,16 @@ async def handle_itinerary(state: TravelState, config: RunnableConfig) -> dict:
 {dietary_hint}
 {kids_hint}
 {crowd_hint}
+{weather_hint}
 {anchored_section}{saved_section}
-I have pre-ordered the attractions and restaurants below by geographic proximity using nearest-neighbor routing. DO NOT reorder them.
-
+I have pre-ordered the attractions and restaurants below by geographic proximity using nearest-neighbor routing. DO NOT reorder them, WITH ONE EXCEPTION: If the user's interests or anchored items explicitly request a place on a specific day OR for a specific meal (like Dinner), you MUST move it to that requested day and time slot, overriding the geographic order.
 Your job is ONLY to:
 1. Slot each pre-ordered stop into a proper daily schedule with realistic time labels
-2. Fill in ALL THREE meals (Breakfast, Lunch, Dinner) for every day — use the [RESTAURANT] stops from the route for one meal slot, and invent a realistic local restaurant name for the remaining meals
+2. Fill in ALL THREE meals (Breakfast, Lunch, Dinner) for every day — use the [RESTAURANT] stops from the route (OR any place the user explicitly requested for a meal) for the meal slots, and invent a realistic local restaurant name for the remaining meals
 3. Add a hotel/accommodation recommendation at the END of each day (category: "hotel")
 4. Write vivid 1-2 sentence descriptions
 5. Estimate realistic duration_minutes for each stop
-6. Add travel_to_next times between consecutive stops (estimate ETA using the provided lat/lon coordinates)
+6. USE THE EXACT PROVIDED TRAVEL TIME to next stop (found in the "[Travel from prev stop:...]" tags of the PRE-ORDERED ROUTE) for the `travel_to_next` field. If not provided, estimate it.
 
 SCHEDULING RULES (strictly enforced):
 - Day start: 08:00 AM with Breakfast (30-45 min)
@@ -1510,6 +1664,7 @@ SCHEDULING RULES (strictly enforced):
 - Evening/Dinner: 07:00 PM – 08:30 PM (90 min)
 - Hotel check-in: 09:00 PM (category: "hotel", duration_minutes: 0)
 - Activities must run BACK-TO-BACK with only travel gaps — do NOT leave hours between them
+- EXPLICIT OVERRIDE RULE: If the user's prompt/interests ask for a specific place on a specific day or meal (e.g. "dinner at X on Day Y"), you MUST schedule that exact place at that exact day/meal slot, even if it is tagged as an [ATTRACTION] and placed in a different Default Grouping.
 
 PRE-ORDERED ROUTE:
 
@@ -1527,6 +1682,8 @@ Return a JSON object with this EXACT structure:
     {{
       "day_number": 1,
       "theme": "A short catchy theme for the day",
+      "weather_summary": {'"Copy the WEATHER line from the route data for this day"' if weather_aware else 'null'},
+      "weather_tip": {'"Copy the WEATHER TIP line from the route data for this day"' if weather_aware else 'null'},
       "slots": [
         {{
           "time_slot": "Breakfast",
@@ -1541,6 +1698,7 @@ Return a JSON object with this EXACT structure:
           "travel_to_next": "🚶 5 mins walk",
           "latitude": null,
           "longitude": null,
+          "thumbnail": null,
           "crowd_status": null
         }},
         {{
@@ -1556,6 +1714,7 @@ Return a JSON object with this EXACT structure:
           "travel_to_next": "🚗 15 mins drive",
           "latitude": 10.0870,
           "longitude": 77.0601,
+          "thumbnail": "https://copy_from_route_thumbnail_or_null",
           "crowd_status": {crowd_status_example}
         }},
         {{
@@ -1571,6 +1730,7 @@ Return a JSON object with this EXACT structure:
           "travel_to_next": "🚗 10 mins drive",
           "latitude": null,
           "longitude": null,
+          "thumbnail": null,
           "crowd_status": null
         }},
         {{
@@ -1586,6 +1746,7 @@ Return a JSON object with this EXACT structure:
           "travel_to_next": "🚶 5 mins walk",
           "latitude": null,
           "longitude": null,
+          "thumbnail": null,
           "crowd_status": null
         }},
         {{
@@ -1601,6 +1762,7 @@ Return a JSON object with this EXACT structure:
           "travel_to_next": null,
           "latitude": null,
           "longitude": null,
+          "thumbnail": null,
           "crowd_status": null
         }}
       ]
@@ -1616,31 +1778,149 @@ CRITICAL RULES:
 - Hotel entry is REQUIRED at the end of every day — suggest a real well-known hotel/resort in {destination}
 - time_slot must be one of: "Breakfast", "Morning", "Lunch", "Afternoon", "Evening", "Dinner", "Night"
 - category must be one of: "attraction", "restaurant", "hotel"
+- thumbnail must be copied exactly from the route data (or null if missing)
 - {crowd_rule}
+- {'weather_summary and weather_tip are REQUIRED for every day object — copy from the WEATHER/WEATHER TIP lines in the route data above' if weather_aware and weather_forecasts else 'weather_summary and weather_tip should be null for all days'}
 - Return ONLY valid JSON, no markdown"""
 
+    import asyncio as _asyncio
+
+    # Build a map to robustly inject thumbnails later
+    thumbnail_map = {}
+    for item in interleaved + saved_hotels:
+        if item.get("name") and item.get("thumbnail"):
+            thumbnail_map[item["name"]] = item["thumbnail"]
+
+    # ── Retry loop (3 attempts) with fallback ──────────────────────────────
+    max_retries = 3
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = model.generate_content(
+                itinerary_prompt,
+                generation_config={"response_mime_type": "application/json"},
+            )
+            text = response.text.strip()
+            decoder = json.JSONDecoder()
+            raw, _ = decoder.raw_decode(text)
+
+            # Validate with Pydantic
+            itinerary = ItineraryResult(**raw)
+            
+            # Robustly inject thumbnails from original data to prevent LLM hallucination/omission
+            for day in itinerary.days:
+                for slot in day.slots:
+                    # Sanitize invalid thumbnail strings
+                    if isinstance(slot.thumbnail, str) and slot.thumbnail.strip() in ["", "null", "None", "N/A", "[]"]:
+                        slot.thumbnail = None
+
+                    if slot.activity_name in thumbnail_map:
+                        slot.thumbnail = thumbnail_map[slot.activity_name]
+                    else:
+                        # Fuzzy match with difflib for better accuracy with truncated or altered names
+                        import difflib
+                        matches = difflib.get_close_matches(slot.activity_name, thumbnail_map.keys(), n=1, cutoff=0.4)
+                        if matches:
+                            slot.thumbnail = thumbnail_map[matches[0]]
+            
+            logger.info(f"Successfully generated {itinerary.total_days}-day geo-optimized itinerary for {destination} (attempt {attempt})")
+
+            # Generate summary and tips for the chat response
+            summary_prompt = f"""
+You have just created a {num_days}-day {pacing} itinerary for {destination}.
+Write a short, engaging summary of the trip (3-4 sentences), including 2-3 specific tips (e.g. what to pack, local customs, travel hacks) based on the locations chosen. Use emojis.
+Itinerary Data:
+{json.dumps(itinerary.model_dump())}
+            """
+            try:
+                summary_response = await model.generate_content_async(summary_prompt)
+                response_text = summary_response.text.strip()
+            except Exception as e:
+                logger.warning(f"Failed to generate itinerary summary: {e}")
+                response_text = f"Here's your {num_days}-day {pacing} itinerary for {destination}! 🗺️✨ All stops are optimized for minimal travel time."
+
+            return {
+                "response_text": response_text,
+                "source": "gemini_itinerary",
+                "itinerary": itinerary.model_dump(),
+            }
+        except Exception as e:
+            last_error = e
+            logger.warning(f"Itinerary generation attempt {attempt}/{max_retries} failed: {e}")
+            if attempt < max_retries:
+                await _asyncio.sleep(1.5 * attempt)  # Backoff: 1.5s, 3s
+
+    # ── All retries exhausted — build fallback itinerary from pre-ordered data ──
+    logger.error(f"All {max_retries} itinerary attempts failed for {destination}. Building fallback.", exc_info=last_error)
     try:
-        response = model.generate_content(
-            itinerary_prompt,
-            generation_config={"response_mime_type": "application/json"},
+        fallback_days = []
+        time_templates = [
+            ("Breakfast", "08:00 AM", "restaurant", "Breakfast"),
+            ("Morning", "09:30 AM", "attraction", None),
+            ("Morning", "11:00 AM", "attraction", None),
+            ("Lunch", "12:30 PM", "restaurant", "Lunch"),
+            ("Afternoon", "02:00 PM", "attraction", None),
+            ("Afternoon", "04:00 PM", "attraction", None),
+            ("Dinner", "07:00 PM", "restaurant", "Dinner"),
+            ("Night", "09:00 PM", "hotel", None),
+        ]
+        for day_idx, day_stops in enumerate(days_split, 1):
+            slots = []
+            template_idx = 0
+            for stop in day_stops:
+                cat = stop.get("category", "attraction")
+                if template_idx < len(time_templates):
+                    ts, tl, _, mt = time_templates[template_idx]
+                    template_idx += 1
+                else:
+                    ts, tl, mt = "Afternoon", "03:00 PM", None
+                slots.append(ItinerarySlot(
+                    time_slot=ts,
+                    time_label=tl,
+                    activity_name=stop.get("name", "Activity"),
+                    description=stop.get("description", "")[:200] or f"Visit {stop.get('name', 'this place')} in {destination}.",
+                    duration_minutes=90 if cat == "attraction" else 60,
+                    cost_estimate=None,
+                    category=cat,
+                    meal_type=stop.get("meal_type") or mt,
+                    rating=stop.get("rating"),
+                    travel_to_next=None,
+                    latitude=stop.get("latitude"),
+                    longitude=stop.get("longitude"),
+                    thumbnail=stop.get("thumbnail"),
+                    crowd_status=None,
+                ))
+            # Ensure at least one slot per day
+            if not slots:
+                slots.append(ItinerarySlot(
+                    time_slot="Morning", time_label="09:00 AM",
+                    activity_name=f"Explore {destination}",
+                    description=f"Spend the day exploring {destination} at your own pace.",
+                    duration_minutes=180, category="attraction",
+                ))
+            fallback_days.append(ItineraryDay(
+                day_number=day_idx,
+                theme=f"Day {day_idx} in {destination}",
+                slots=slots,
+            ))
+
+        fallback_itinerary = ItineraryResult(
+            destination=destination,
+            total_days=num_days,
+            pacing=pacing,
+            start_location=start_location,
+            meal_preference=meal_preference,
+            days=fallback_days,
         )
-        text = response.text.strip()
-        decoder = json.JSONDecoder()
-        raw, _ = decoder.raw_decode(text)
-
-        # Validate with Pydantic
-        itinerary = ItineraryResult(**raw)
-        logger.info(f"Successfully generated {itinerary.total_days}-day geo-optimized itinerary for {destination}")
-
         return {
-            "response_text": f"Here's your {num_days}-day {pacing} itinerary for {destination}! 🗺️✨ "
-                             f"{'Starting from ' + start_location + '. ' if start_location else ''}"
-                             f"All stops are optimized for minimal travel time between locations.",
-            "source": "gemini_itinerary",
-            "itinerary": itinerary.model_dump(),
+            "response_text": f"Here's your {num_days}-day itinerary for {destination}! 🗺️ "
+                             f"(Note: I used a simplified layout due to a temporary issue. "
+                             f"All stops are still geo-optimized for minimal travel time.)",
+            "source": "gemini_itinerary_fallback",
+            "itinerary": fallback_itinerary.model_dump(),
         }
-    except (json.JSONDecodeError, Exception) as e:
-        logger.error(f"Itinerary generation failed: {e}", exc_info=True)
+    except Exception as fallback_err:
+        logger.error(f"Fallback itinerary build also failed: {fallback_err}", exc_info=True)
         return {
             "response_text": f"I had trouble generating the itinerary for {destination}. Please try again!",
             "source": "gemini_itinerary",
@@ -1757,6 +2037,7 @@ def route_by_intent(state: TravelState) -> str:
         "restaurant_search": "handle_restaurants",
         "event_search": "handle_events",
         "place_info": "handle_place_info",
+        "destination_explore": "handle_destination_explore",
         "destination_discovery": "handle_destination_discovery",
         "directions_search": "handle_directions",
         "itinerary_search": "handle_itinerary",
@@ -1789,6 +2070,7 @@ def _build_travel_graph():
     graph.add_node("handle_restaurants", handle_restaurants)
     graph.add_node("handle_events", handle_events)
     graph.add_node("handle_place_info", handle_place_info)
+    graph.add_node("handle_destination_explore", handle_destination_explore)
     graph.add_node("handle_destination_discovery", handle_destination_discovery)
     graph.add_node("handle_directions", handle_directions)
     graph.add_node("handle_itinerary", handle_itinerary)
@@ -1813,6 +2095,7 @@ def _build_travel_graph():
             "handle_restaurants": "handle_restaurants",
             "handle_events": "handle_events",
             "handle_place_info": "handle_place_info",
+            "handle_destination_explore": "handle_destination_explore",
             "handle_destination_discovery": "handle_destination_discovery",
             "handle_directions": "handle_directions",
             "handle_itinerary": "handle_itinerary",
@@ -1840,6 +2123,7 @@ def _build_travel_graph():
     graph.add_edge("handle_restaurants", "save_response")
     graph.add_edge("handle_events", "save_response")
     graph.add_edge("handle_place_info", "save_response")
+    graph.add_edge("handle_destination_explore", "save_response")
     graph.add_edge("handle_destination_discovery", "save_response")
     graph.add_edge("handle_directions", "save_response")
     graph.add_edge("handle_itinerary", "save_response")
@@ -1893,6 +2177,7 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
         "meal_preference": request.meal_preference,
         "crowd_aware": request.crowd_aware,
         "crowd_precision": request.crowd_precision,
+        "weather_aware": getattr(request, "weather_aware", None),
         "interests": getattr(request, "interests", None),
         "activity_level": getattr(request, "activity_level", None),
         "kids_friendly": getattr(request, "kids_friendly", None),
@@ -1902,6 +2187,11 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
     }
 
     initial_state = {k: v for k, v in raw_state.items() if v is not None}
+    
+    # Explicitly clear transient flags to prevent checkpointer bleed from previous turns
+    for key in ["forced_intent", "target_place", "target_day"]:
+        if raw_state.get(key) is None:
+            initial_state[key] = None
 
     logger.info(f"Running travel graph with thread_id={thread_id}, user_id={user_id}")
 
@@ -1952,7 +2242,7 @@ async def run_travel_graph(request: Any, db: Session, user: Any = None) -> dict:
 #  PUBLIC ENTRY POINT — STREAMING (SSE)
 # ═══════════════════════════════════════════════════════════════════════════
 # Intents where we stream the Gemini text response token-by-token
-_STREAMABLE_INTENTS = {"place_info", "travel_question", "general_chat", "destination_discovery"}
+_STREAMABLE_INTENTS = {"place_info", "travel_question", "general_chat", "destination_discovery", "destination_explore"}
 
 async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
     """
@@ -1963,7 +2253,7 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
         {"event": "done",  "data": {full ChatResponse-like dict}}
         {"event": "error", "data": {"message": "..."}}
 
-    For streamable intents (place_info, travel_question, general_chat, destination_discovery):
+    For streamable intents (place_info, travel_question, general_chat, destination_discovery, destination_explore):
         Runs classify_intent → prepares context → streams Gemini text → emits done with metadata.
     For data-heavy intents (hotels, itinerary, etc.):
         Runs the full graph normally and emits a single done event.
@@ -1993,6 +2283,7 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
         "meal_preference": request.meal_preference,
         "crowd_aware": request.crowd_aware,
         "crowd_precision": request.crowd_precision,
+        "weather_aware": getattr(request, "weather_aware", None),
         "interests": getattr(request, "interests", None),
         "activity_level": getattr(request, "activity_level", None),
         "kids_friendly": getattr(request, "kids_friendly", None),
@@ -2002,6 +2293,11 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
     }
     
     initial_state = {k: v for k, v in raw_state.items() if v is not None}
+    
+    # Explicitly clear transient flags to prevent checkpointer bleed from previous turns
+    for key in ["forced_intent", "target_place", "target_day"]:
+        if raw_state.get(key) is None:
+            initial_state[key] = None
 
     logger.info(f"[STREAM] Running with thread_id={thread_id}, user_id={user_id}")
 
@@ -2111,7 +2407,49 @@ async def run_travel_graph_stream(request: Any, db: Session, user: Any = None):
     prompt = None
     extra_data = {}  # Non-text data to include in done event
 
-    if intent == "place_info":
+    if intent == "destination_explore":
+        # Fetch RAG context for the destination
+        rag_context = ""
+        if destination:
+            try:
+                rag_result = await process_chat_query(db, effective_query, destination, history=history)
+                if rag_result and rag_result.get("response"):
+                    rag_context = rag_result["response"][:3000]
+            except Exception as e:
+                logger.warning(f"RAG context fetch failed for stream destination_explore: {e}")
+
+        history_block = ""
+        if history and len(history) > 1:
+            history_text = _format_history(history[:-1])
+            history_block = f"\nPrevious conversation:\n{history_text}\n"
+
+        prompt = f"""You are Travelo AI, an expert and enthusiastic travel assistant.
+
+The user is CONSIDERING visiting {destination}. They have NOT asked for a detailed itinerary yet — they're in the exploration phase.
+
+Your job is to give them an exciting, informative overview that helps them decide. Include:
+
+1. **🌟 Why Visit {destination}** — 2-3 compelling reasons to visit
+2. **🗓️ Best Time to Visit** — ideal months/seasons and why
+3. **🏖️ Top Highlights** — 4-5 must-see attractions or experiences (brief, 1 line each)
+4. **💡 Travel Tips** — 3-4 practical tips (budget, transport, food, safety, etc.)
+5. **⏱️ Ideal Duration** — how many days are recommended
+
+RULES:
+- Be enthusiastic but concise — each section should be brief and scannable
+- Use bullet points (- ) for lists
+- Use **bold** for key facts
+- Use emojis for section headers
+- Base your response on the context provided, supplement with general knowledge
+- At the END, add this line exactly: "\n\n🗺️ **Would you like me to create a detailed day-by-day itinerary for {destination}?** Just say the word!"
+
+{history_block}
+Background context about {destination}:
+{rag_context if rag_context else 'No specific context available — use your general knowledge.'}
+
+User's message: {effective_query}"""
+
+    elif intent == "place_info":
         # Fetch RAG context (non-streaming)
         rag_result = await process_chat_query(db, effective_query, destination, history=history)
         context = rag_result.get("response", "") if rag_result else ""

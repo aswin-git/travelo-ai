@@ -53,7 +53,6 @@ def resolve_destination(destination: str) -> Optional[dict]:
     """
     queries = [
         destination,
-        f"{destination}, Kerala",
         f"{destination}, India",
     ]
     for q in queries:
@@ -142,7 +141,6 @@ def geocode_place(
 
     # Tier 2: broader regional query (drop the specific city, use state)
     regional_queries = [
-        f"{place_name}, Kerala, India",
         f"{place_name}, India",
     ]
     for q in regional_queries:

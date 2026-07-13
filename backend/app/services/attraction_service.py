@@ -59,7 +59,7 @@ def search_attractions(
         print("Attraction search error: SERPAPI_KEY not configured")
         return []
 
-    query_parts = ["top rated"]
+    query_parts = ["top"]
     if kids_friendly:
         query_parts.append("family friendly kids")
     if interests:
@@ -88,7 +88,7 @@ def search_attractions(
         locals_results = results.get("local_results", [])
         
         attractions = []
-        for loc in locals_results[:10]:
+        for loc in locals_results[:20]:
             gps = loc.get("gps_coordinates") or {}
             attractions.append({
                 "name": loc.get("title", "Unknown Attraction"),
