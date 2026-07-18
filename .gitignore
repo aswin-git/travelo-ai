@@ -24,4 +24,4 @@ dist/
 build/
 
 # OS files
-.DS_Store
+.DS_Storedeploy-gcp.sh
