@@ -492,19 +492,24 @@ export default function App() {
                 if (data.hotels && data.hotels.length > 0) {
                   setLatestData({ type: 'hotel_recommendation', results: data.hotels })
                   setActiveTab('Hotels')
-                } else if (data.attractions && data.attractions.length > 0) {
+                }
+                if (data.attractions && data.attractions.length > 0) {
                   setLatestData({ type: 'attraction_recommendation', results: data.attractions })
                   setActiveTab('Places')
-                } else if (data.restaurants && data.restaurants.length > 0) {
+                }
+                if (data.restaurants && data.restaurants.length > 0) {
                   setLatestData({ type: 'restaurant_recommendation', results: data.restaurants })
                   setActiveTab('Food')
-                } else if (data.events && data.events.length > 0) {
+                }
+                if (data.events && data.events.length > 0) {
                   setLatestData({ type: 'event_recommendation', results: data.events })
                   setActiveTab('Events')
-                } else if (data.directions && data.directions.length > 0) {
+                }
+                if (data.directions && data.directions.length > 0) {
                   setLatestData({ type: 'directions_recommendation', results: data.directions })
                   setActiveTab('Directions')
-                } else if (data.itinerary) {
+                }
+                if (data.itinerary) {
                   setItineraryData(data.itinerary)
                   setActiveDay(1)
                   setActiveTab('Itinerary')
