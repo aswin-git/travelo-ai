@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+chroma_data/
+.env
+*.ipynb
+test*.py
+evaluation/
+travel_graph.png
+=1.2.0
+response.json

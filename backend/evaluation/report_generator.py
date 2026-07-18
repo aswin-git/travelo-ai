@@ -67,7 +67,7 @@ def generate_html_report(eval_results: dict, output_path: str) -> str:
     metric_labels = {
         "faithfulness": ("Faithfulness", "Is the answer grounded in the retrieved context?"),
         "answer_relevancy": ("Answer Relevancy", "Does the answer address the user's question?"),
-        "context_precision": ("Context Precision", "Is the retrieved context relevant?"),
+        "llm_context_precision_with_reference": ("Context Precision", "Is the retrieved context relevant?"),
         "context_recall": ("Context Recall", "Does the context contain needed information?"),
     }
 
@@ -99,7 +99,7 @@ def generate_html_report(eval_results: dict, output_path: str) -> str:
             <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">{sample['question']}</td>
             <td style="padding:12px 8px;">{_bar_chart(scores.get('faithfulness'))}</td>
             <td style="padding:12px 8px;">{_bar_chart(scores.get('answer_relevancy'))}</td>
-            <td style="padding:12px 8px;">{_bar_chart(scores.get('context_precision'))}</td>
+            <td style="padding:12px 8px;">{_bar_chart(scores.get('llm_context_precision_with_reference'))}</td>
             <td style="padding:12px 8px;">{_bar_chart(scores.get('context_recall'))}</td>
             <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">{sample['source']}</td>
         </tr>

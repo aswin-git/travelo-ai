@@ -5,6 +5,7 @@ Provides get_current_user() and get_optional_user() for route injection.
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import Optional
 
 from ..database import get_db
@@ -46,9 +47,13 @@ def get_current_user(
             email=email,
             display_name=email.split("@")[0] if email else "Traveler",
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        try:
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        except IntegrityError:
+            db.rollback()
+            user = db.query(User).filter(User.supabase_uid == supabase_uid).first()
 
     return user
 
@@ -79,9 +84,13 @@ def get_optional_user(
                 email=email,
                 display_name=email.split("@")[0] if email else "Traveler",
             )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
+            try:
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+            except IntegrityError:
+                db.rollback()
+                user = db.query(User).filter(User.supabase_uid == supabase_uid).first()
 
         return user
     except HTTPException:

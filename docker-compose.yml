@@ -20,17 +20,27 @@ services:
     container_name: travelo_backend
     depends_on:
       - db
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-travelo}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
-      SERPAPI_KEY: ${SERPAPI_KEY}
       CHROMA_PERSIST_DIR: /app/chroma_data
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     ports:
       - "8000:8000"
     volumes:
       - ./backend/chroma_data:/app/chroma_data
     restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: travelo_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
 
   frontend:
     build: ./frontend
@@ -43,3 +53,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

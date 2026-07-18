@@ -1,0 +1,71 @@
+{
+  "metrics": {
+    "faithfulness": {
+      "mean": 0.9298,
+      "min": 0.7895,
+      "max": 1.0,
+      "std": 0.1215
+    },
+    "answer_relevancy": {
+      "mean": 0.799,
+      "min": 0.4951,
+      "max": 0.9945,
+      "std": 0.2668
+    },
+    "context_recall": {
+      "mean": 0.4889,
+      "min": 0.0,
+      "max": 0.8,
+      "std": 0.4286
+    }
+  },
+  "per_sample": [
+    {
+      "question": "Tell me about Munnar",
+      "place_name": "Munnar",
+      "answer": "## 🌍 Overview\n**Munnar** is a stunning hill station in the Idukki district of **Kerala**, India, perched at an elevation of 1,600 meters in the **Western Ghats**. Historically a summer resort for British colonial officials, it is now world-renowned for its emerald-green, sprawling tea plantations and misty mountain landscapes. The town’s name is derived from its location at the confluence of three rivers: the **Madupetti**, **Nallathanni**, and **Periavaru**.\n\n## ✨ Highlights\n- **Tea Culture:** The town’s identity is deeply rooted in the tea industry, developed during the British Raj.\n- **Cultural Mosaic:** Due to the influx of workers from **Tamil Nadu** and **Kerala** in the 19th century, both **Malayalam** and **Tamil** are widely spoken.\n- **Natural Beauty:** Known for majestic peaks like **Anamudi**, rare wildlife, and cascading waterfalls.\n\n## 🌤️ Current Weather\n- The current temperature is **16.25°C** with **moderate rain** and high humidity (99%). \n\n## 🏛️ Must-Visit Spots\n- **Eravikulam National Park:** The best place to spot the endangered **Nilgiri Tahr** and explore the rugged **Rajamala** terrain.\n- **Lockhart Tea Museum:** Offers guided tours on the history and nuances of orthodox tea processing.\n- **Top Station:** Famous for panoramic, cloud-level views of the Western Ghats.\n- **Marayoor:** A hidden gem featuring natural **sandalwood forests** and prehistoric caves with Stone Age murals.\n- **Mattupetty:** Known for tranquil lakes and romantic 'Kashmiri-Shikara' boat rides.\n\n## 🍽️ Local Cuisine\n- **Kerala Staples:** Enjoy **Fish Curry** prepared with fresh local spices and coconut oil.\n- **Traditional Snacks:** Try **idiyappam** (string hoppers) served with spicy vegetable or meat stews.\n- **Street Food:** Visit the town bus stand area for **Gobi noodles** and **chilly bhaji**, best paired with fresh, locally grown **Munnar tea**.\n- **Dining Recommendations:** Visit **Guru's Restaurant** for North Indian classics or **Saravana Bhavan** for authentic, affordable South Indian vegetarian meals served on banana leaves.\n\n## 📅 Best Time to Visit\n- **October to March:** The optimal window; weather is cool, perfect for sightseeing and trekking.\n- **Neelakurinji Blooming:** A rare event occurring every 12 years (last seen in 2018).\n- **Note:** The region experiences heavy monsoon activity from April to November.\n\n## 💡 Travel Tips\n- **Getting Around:** Road is the only way in. Use **auto-rickshaws (tuktuks)** for short distances within town, but hire a **private taxi** with an experienced driver for plantation visits due to narrow, foggy roads.\n- **Safety:** Always carry a high-quality flashlight as it gets dark quickly after sunset. If driving, avoid mountain roads after **4 PM** to stay safe from thick, blinding mist.\n- **Accommodations:** Stay in **Old Munnar** for history, the main town for convenience, or **Chinnakkanal** for a secluded, luxurious, and peaceful experience.",
+      "context_snippet": "=== General Description ===\n### Overview\nMunnar is a stunning hill station nestled in the Western Ghats of Kerala, sitting at an elevation of 1,600 meters. Famous for its sprawling, emerald-green tea ...",
+      "ground_truth_snippet": "Munnar is a hill station in the Western Ghats of Kerala, India, situated at around 1,600 metres above sea level. It is known for its sprawling tea plantations, misty mountains, and cool climate. Key a...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.7895,
+        "answer_relevancy": 0.4951,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "question": "What are the best things to do in Munnar?",
+      "place_name": "Munnar",
+      "answer": "## 🏛️ Best Things to Do in Munnar\n\n*   **Wildlife & Nature:** Visit **Eravikulam National Park** to spot the endangered **Nilgiri Tahr** and explore the rugged terrain of **Rajamala**.\n*   **Tea Exploration:** Take a guided tour at the **Lockhart Tea Museum** to learn about the nuances of orthodox tea processing.\n*   **Romantic Experiences:** Enjoy a **'Kashmiri-Shikara'** boat ride on the tranquil lakes near **Mattupetty**, a highly recommended activity for couples.\n*   **Adventure Activities:** Try rock climbing and rappelling on the 30-meter rock faces, or go for a scenic trek through the clouds toward **Top Station** for panoramic views of the **Western Ghats**.\n*   **Photography:** Visit the various natural waterfalls located along the routes leading into Munnar, which serve as excellent spots for photography.\n*   **Historical Landmarks:** \n    *   Visit **Christ Church** in **Old Munnar**, built in 1910, known for its charming interior and original wooden pews.\n    *   Explore the **Munnar Supply Association (MSA)**, a heritage site from 1900 that offers a glimpse into the life of historical tea planters.\n    *   Discover the **Mount Carmel Roman Catholic Church**, the first Catholic church in the High Ranges.\n*   **Hidden Gems:** \n    *   Head to **Marayoor** to see Kerala’s only natural sandalwood forests and prehistoric caves featuring Stone Age murals.\n    *   Visit **Signal Point** (historically known as **'Cigarette Point'**) for a quiet, breathtaking view of the valley and surrounding hills.",
+      "context_snippet": "=== General Description ===\n### Overview\nMunnar is a stunning hill station nestled in the Western Ghats of Kerala, sitting at an elevation of 1,600 meters. Famous for its sprawling, emerald-green tea ...",
+      "ground_truth_snippet": "Popular activities in Munnar include visiting tea plantations and the Tea Museum, trekking in Eravikulam National Park to spot the Nilgiri tahr, boating at Mattupetty Dam, exploring the flower gardens...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9945,
+        "context_recall": 0.8
+      }
+    },
+    {
+      "question": "What is the best time to visit Munnar?",
+      "place_name": "Munnar",
+      "answer": "📅 **Best Time to Visit Munnar**\n\n- The **optimal time** to visit is during the post-monsoon period, from **October to March**.\n- During this window, the weather is cool, making it perfect for **trekking and sightseeing**.\n- Afternoon temperatures typically range between **22°C and 26°C**.\n- Be prepared for significantly colder nights, which require **warm clothing**.\n- Visitors should be aware that the region experiences **significant monsoon activity from April to November**.\n- For those hoping to see the rare **Neelakurinji flower** (which blooms every 12 years), you must time your visit to those specific flowering months, though tourist crowds are at their peak during that time.",
+      "context_snippet": "=== General Description ===\n### Overview\nMunnar is a stunning hill station nestled in the Western Ghats of Kerala, sitting at an elevation of 1,600 meters. Famous for its sprawling, emerald-green tea ...",
+      "ground_truth_snippet": "The best time to visit Munnar is from September to May. The monsoon season (June-August) brings heavy rainfall. Winter months (December-February) are cool and ideal for sightseeing, while summer (Marc...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9074,
+        "context_recall": 0.0
+      }
+    }
+  ],
+  "metadata": {
+    "timestamp": "2026-06-28T15:02:20.199528+00:00",
+    "num_samples": 3,
+    "elapsed_seconds": 310.68,
+    "embedding_model": "all-MiniLM-L6-v2",
+    "llm_model": "gemini-2.0-flash (judge), gemini-3.1-flash-lite-preview (generation)",
+    "chroma_similarity_threshold": 0.5
+  }
+}

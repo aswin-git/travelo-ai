@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
 from .routes import chat_routes
 from .routes import user_routes
 from .database import engine, Base
@@ -9,14 +10,18 @@ from .models import place_model  # noqa: F401
 from .models import user_model   # noqa: F401
 
 # Create database tables if they don't exist
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Warning: DB init error (likely concurrent creation): {e}")
 
 app = FastAPI(title="Travelo AI API", version="1.0.0")
 
-# Configure CORS
+# Configure CORS — reads from ALLOWED_ORIGINS env var in production
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify frontend URL
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

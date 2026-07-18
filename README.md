@@ -1,78 +1,53 @@
-# DISHA AI: Agentic Intelligent Travel Decision Platform
+# Travelo AI — Intelligent Travel Planning Agent
 
-DISHA AI is a next-generation, agentic travel platform designed to provide hyper-personalized travel decisions. By orchestrating multiple specialized intelligence engines, DISHA AI transforms fragmented travel data into cohesive, time-optimized, and context-aware travel experiences.
+Travelo AI is a next-generation, conversational agentic travel platform designed to replace fragmented travel research. It orchestrates multiple intelligence engines to generate geographically optimized, hallucination-free itineraries based on real-world data and user constraints.
 
-## 🧠 Modular Architecture
+## 🚀 Core Features
 
-DISHA AI is built on a sophisticated multi-agent architecture, consisting of 12 specialized modules:
-
-### 1. Master Orchestrator Agent
-- **Intent & Memory**: Understands user intent and maintains session memory across multi-turn conversations.
-- **Clarification**: Detects missing trip details and asks targeted clarifying questions.
-- **Dynamic Activation**: Activates relevant engines based on user context and merges outputs into a single coherent response.
-
-### 2. Travel Discovery Engine
-- **Style-Based Discovery**: Suggests top places and neighborhoods based on traveler style (relaxing, food-focused, cultural, nightlife, adventure).
-- **Hidden Gems**: Recommends off-the-beaten-path spots alongside mainstream attractions.
-
-### 3. Hotel Intelligence Engine
-- **Multi-Factor Scoring**: Ranks hotels based on Review Quality (25%), Price Fit (20%), Location (20%), Amenities (15%), Comfort (10%), and Weather Suitability (10%).
-- **Smart Filtering**: Filters out unavailable, out-of-budget, and low-quality results in the first pass.
-
-### 4. Restaurant Intelligence Engine
-- **Contextual Matching**: Matches cuisine preferences, meal-time context, and budget constraints.
-- **Sentiment Scoring**: Analyzes hygiene and food quality through review sentiment analysis.
-- **Real-Time Status**: Checks real-time opening status and proximity.
-
-### 5. Tourist Places Engine
-- **Suitability Flagging**: Flags attractions for indoor/outdoor suitability and estimates crowd levels/time required.
-- **Profile Adaptation**: Adjusts recommendations for family, couple, or solo traveler profiles.
-- **Weather-Adaptive**: Boosts indoor places during rain and deprioritizes outdoor spots like beaches.
-
-### 6. Weather Engine
-- **Live Forecasts**: Fetches destination weather via OpenWeather API for specific travel dates.
-- **Decision Logic**: High rain probability triggers itinerary adjustments, prioritizing indoor locations and transport options like cabs/metro.
-
-### 7. Review Intelligence Engine
-- **Quick Summaries**: Provides clean, concise card summaries of user experiences.
-- **Ask AI (RAG)**: Allows users to ask specific questions (e.g., "Is this hotel good for elderly parents?") and receive cited answers using Retrieval-Augmented Generation.
-
-### 8. Transport Optimization Engine
-- **Graph Modeling**: Models the transport network (metro, bus, ferry, airport) as a graph.
-- **Multi-Objective Routing**: Uses Dijkstra/A* algorithms to find the fastest, cheapest, or least-transfer routes.
-
-### 9. RAG Knowledge Engine
-- **Grounded Chat**: A factual travel chatbot grounded in tourism portals, seasonal guides, and local travel tips.
-- **Semantic Search**: Uses embedding search to retrieve relevant chunks for accurate, cited responses.
-
-### 10. Ranking Engine
-- **Personalized Decision Layer**: The core layer that determines the final ordering of all recommendations.
-- **Dynamic Weighting**: Weights (Reviews, Price, Location, etc.) adjust dynamically based on traveler type (Family vs. Solo vs. Business).
-
-### 11. Itinerary Generator
-- **Coherent Planning**: Integrates outputs from all engines into a complete, day-wise, time-optimized schedule.
-- **Seamless Flow**: Manages transitions between check-in, meals, attractions, and transport.
-
-### 12. Booking Agent (Future Phase)
-- **Direct Transactions**: Will allow booking hotels and reserving restaurants directly through the platform.
-- **Price Alerts**: Future support for fare drop notifications and pre-filled booking handoffs.
-
----
+- **Agentic Planning (LangGraph):** A 17-node state machine that autonomously gathers requirements, detects missing constraints (budget, dates), and routes intents.
+- **Zero Hallucination RAG:** Uses ChromaDB (`all-MiniLM-L6-v2`) to inject factual Wikivoyage chunks into the LLM context, ensuring real-world accuracy.
+- **Concurrent API Fetching:** Orchestrates parallel calls to SerpAPI (Places/Hotels), OpenWeather, and Crowd APIs to synthesize data in under 8 seconds.
+- **Spatial Intelligence (Geo-Routing):** Computes Haversine distances to order attractions linearly and interleaves restaurants exactly where the user will physically be during meal slots.
+- **Dynamic POI Scoring:** Custom heuristic engines rank hotels (out of 50) and restaurants based on rating, popularity, budget match, and context.
 
 ## 🛠 Tech Stack
 
-### Backend
-- **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+)
-- **LLM**: [Google Gemini](https://aistudio.google.com/) (Flash & Pro models)
-- **Orchestration**: [LangGraph / LangChain](https://python.langchain.com/docs/langgraph)
-- **Vector Database**: [ChromaDB](https://www.trychroma.com/)
-- **Primary Database**: [PostgreSQL](https://www.postgresql.org/)
-- **ORM**: [SQLAlchemy](https://www.sqlalchemy.org/)
-- **Integrations**: [SerpAPI](https://serpapi.com/) (Google Hotels/Maps), [OpenStreetMap](https://www.openstreetmap.org/), [Wikipedia REST API](https://www.wikipedia.org/), [OpenWeatherMap](https://openweathermap.org/api).
+### Frontend (Client-Side)
+- **Framework:** React 19 (Vite)
+- **Styling:** Tailwind CSS (Aurora Glassmorphism & Light modes)
+- **Mapping:** Leaflet & React-Leaflet
+- **Streaming:** Server-Sent Events (SSE) for low-latency generation
+- **Auth:** Supabase
 
-### Frontend
-- **Framework**: [React](https://reactjs.org/) (Vite)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Design**: Premium, modern UI with a focus on visual excellence and micro-animations.
+### Backend (Server-Side)
+- **API Engine:** FastAPI (Python 3)
+- **LLM Engine:** Google Gemini (`3.1-flash-lite-preview` for synthesis, `2.0-flash` for intent/eval)
+- **Orchestration:** LangGraph (StateGraph Multi-Agent Architecture)
+- **Databases:** 
+  - PostgreSQL via Supabase (Relational & Caching)
+  - ChromaDB (Vector/RAG)
+  - Redis (Rate Limiting/TTL Caching)
+- **External APIs:** SerpAPI, OpenWeather, Nominatim (OpenStreetMap)
 
----
+## 🏗 Architecture (17-Node LangGraph)
+
+The core logic operates as an advanced state machine:
+1. **Setup:** `manage_history`, `classify_intent` (Gemini 2.0 JSON parsing + coreference resolution).
+2. **Domain Handlers:** Dedicated nodes for `handle_itinerary`, `handle_hotel_search`, `handle_restaurants`, `handle_attractions`, `handle_directions`, etc.
+3. **Conversational Modifiers:** Nodes to dynamically search and add places to existing itineraries mid-conversation.
+4. **Synthesis:** Aggregated JSON is passed to Gemini 3.1 to generate the final itinerary narrative.
+
+## ☁️ Production Deployment (GCP)
+
+Fully automated serverless architecture on Google Cloud Platform:
+- **Compute:** Cloud Run (`travelo-backend` & `travelo-frontend`).
+- **Storage:** Cloud SQL (PostgreSQL) + GCS buckets mounted for ChromaDB persistence.
+- **CI/CD:** Google Cloud Build automates Docker image builds (Artifact Registry) and deployments on main branch pushes.
+
+## 📊 Evaluation & Baselines
+
+Automated `rag_evaluator` metrics (Sample Size: 20):
+- **Faithfulness:** 0.92
+- **Answer Relevancy:** 0.83
+- **Context Precision:** 0.81
+- **Context Recall:** 0.71

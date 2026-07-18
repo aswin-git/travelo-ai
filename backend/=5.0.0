@@ -1,0 +1,8 @@
+Collecting redis
+  Downloading redis-8.0.0-py3-none-any.whl.metadata (13 kB)
+Downloading redis-8.0.0-py3-none-any.whl (499 kB)
+Installing collected packages: redis
+Successfully installed redis-8.0.0
+
+[notice] A new release of pip is available: 26.1.1 -> 26.1.2
+[notice] To update, run: pip install --upgrade pip

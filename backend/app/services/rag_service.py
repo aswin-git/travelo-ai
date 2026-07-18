@@ -59,7 +59,7 @@ def _safe_fetch_weather(*, lat: float = None, lon: float = None, place_name: str
         return None
 
 
-async def process_chat_query(db: Session, message: str, place_name: str) -> dict:
+async def process_chat_query(db: Session, message: str, place_name: str, history: list = None) -> dict:
     """Orchestrates the RAG flow for a chat query."""
     logger.info(f"Processing chat query for place: {place_name}")
 
@@ -93,7 +93,7 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
         if weather_info:
             runtime_context += f" | {weather_info}"
 
-        bot_response = await chat_with_context(message, runtime_context)
+        bot_response = await chat_with_context(message, runtime_context, history=history)
         return {
             "response": bot_response,
             "source": "database_and_rag",
@@ -190,7 +190,7 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
         logger.info(f"Saved new place '{place_name}' to PostgreSQL (ID: {saved_place.id})")
     except Exception as e:
         logger.error(f"Failed to save place '{place_name}' to DB: {e}", exc_info=True)
-        bot_response = await chat_with_context(message, raw_context_for_llm)
+        bot_response = await chat_with_context(message, raw_context_for_llm, history=history)
         return {
             "response": bot_response,
             "source": "external_api_no_save",
@@ -213,7 +213,7 @@ async def process_chat_query(db: Session, message: str, place_name: str) -> dict
         logger.error(f"ChromaDB chunk indexing failed for '{place_name}': {e}", exc_info=True)
 
     # 7. Generate and return response using weather-enriched context
-    bot_response = await chat_with_context(message, raw_context_for_llm)
+    bot_response = await chat_with_context(message, raw_context_for_llm, history=history)
 
     return {
         "response": bot_response,

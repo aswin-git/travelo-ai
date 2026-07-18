@@ -1,0 +1,292 @@
+{
+  "metrics": {
+    "faithfulness": {
+      "mean": 0.6362,
+      "min": 0.0,
+      "max": 1.0,
+      "std": 0.3696
+    },
+    "answer_relevancy": {
+      "mean": 0.297,
+      "min": 0.0,
+      "max": 0.9093,
+      "std": 0.376
+    },
+    "context_recall": {
+      "mean": 0.185,
+      "min": 0.0,
+      "max": 0.6667,
+      "std": 0.2412
+    }
+  },
+  "per_sample": [
+    {
+      "question": "Tell me about Munnar",
+      "place_name": "Munnar",
+      "answer": "## 🌍 Overview\n- **Munnar** is a scenic destination nestled in the **lush hills of Kerala**.\n- It is renowned for its **vast, mist-covered tea plantations**.\n- It offers a **refreshingly cool climate**, making it an ideal sanctuary for nature lovers and a perfect romantic escape for honeymooners.\n\n## 🌤️ Current Weather\n- **Temperature:** 16.92°C\n- **Conditions:** Overcast clouds\n- **Humidity:** 99%",
+      "context_snippet": "Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...",
+      "ground_truth_snippet": "Munnar is a hill station in the Western Ghats of Kerala, India, situated at around 1,600 metres above sea level. It is known for its sprawling tea plantations, misty mountains, and cool climate. Key a...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.375,
+        "answer_relevancy": 0.6551,
+        "context_recall": 0.3333
+      }
+    },
+    {
+      "question": "What are the best things to do in Munnar?",
+      "place_name": "Munnar",
+      "answer": "## 🏛️ Must-Visit Spots & Activities\n\nBased on the provided information, the best experiences in **Munnar** include:\n\n- **Exploring Tea Plantations:** Wander through the vast, mist-covered **tea plantations** that define the landscape.\n- **Nature Walks:** Enjoy the lush, hilly terrain, which offers a serene and picturesque environment for **nature lovers**.\n- **Romantic Escapes:** Given its tranquil atmosphere, the area is an ideal destination for **honeymooners** and couples seeking a quiet retreat.",
+      "context_snippet": "Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...",
+      "ground_truth_snippet": "Popular activities in Munnar include visiting tea plantations and the Tea Museum, trekking in Eravikulam National Park to spot the Nilgiri tahr, boating at Mattupetty Dam, exploring the flower gardens...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.3333,
+        "answer_relevancy": 0.7198,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "What is the best time to visit Munnar?",
+      "place_name": "Munnar",
+      "answer": "The provided context does not contain information regarding the best time to visit **Munnar**.",
+      "context_snippet": "Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...",
+      "ground_truth_snippet": "The best time to visit Munnar is from September to May. The monsoon season (June-August) brings heavy rainfall. Winter months (December-February) are cool and ideal for sightseeing, while summer (Marc...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Tell me about Alappuzha",
+      "place_name": "Alappuzha",
+      "answer": "I apologize, but I do not have sufficient information about **Alappuzha** in the provided context to describe the destination.\n\n🌤️ **Current Weather**\n- **Temperature:** 26.44°C\n- **Conditions:** Light rain\n- **Humidity:** 86%",
+      "context_snippet": "Alappuzha. I'm sorry, I couldn't generate a description for this place right now.\n\nAlappuzha and Kollam - Overview: Alappuzha and Kollam serve as the dual gateways to Kerala's mesmerizing backwater ne...",
+      "ground_truth_snippet": "Alappuzha, also known as Alleppey, is a city in Kerala famous for its houseboat cruises through the backwaters, a network of lagoons, canals, and lakes. It is often called the 'Venice of the East'. Th...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.25,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "question": "What can I do in Alappuzha?",
+      "place_name": "Alappuzha",
+      "answer": "I am sorry, but the provided context does not contain information regarding activities or tourist spots in **Alappuzha**. Therefore, I cannot suggest what you can do there.",
+      "context_snippet": "Alappuzha. I'm sorry, I couldn't generate a description for this place right now.\n\nAlappuzha and Kollam - Overview: Alappuzha and Kollam serve as the dual gateways to Kerala's mesmerizing backwater ne...",
+      "ground_truth_snippet": "In Alappuzha you can take a houseboat cruise through the Kerala backwaters, visit Alappuzha Beach, explore Marari Beach, see the Revi Karunakaran Museum, visit Krishnapuram Palace, and experience the ...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.1667
+      }
+    },
+    {
+      "question": "How do I get to Alappuzha from Kochi?",
+      "place_name": "Alappuzha",
+      "answer": "I am sorry, but the provided context does not contain information regarding transportation or travel directions from **Kochi** to **Alappuzha**.",
+      "context_snippet": "Alappuzha. I'm sorry, I couldn't generate a description for this place right now.\n\nAlappuzha and Kollam - Overview: Alappuzha and Kollam serve as the dual gateways to Kerala's mesmerizing backwater ne...",
+      "ground_truth_snippet": "Alappuzha is about 53 km from Kochi. You can reach it by road (approximately 1.5 hours by car or bus via NH66), by train (Alappuzha railway station is well-connected), or by boat through the scenic ba...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Tell me about Wayanad",
+      "place_name": "Wayanad",
+      "answer": "## 🌍 Overview\n- **Wayanad** is a lush, mountainous district in the **Western Ghats of Kerala**.\n- It features an elevation ranging from **700 to 2,100 meters**, creating a cool, misty climate.\n- The landscape is defined by **dense forests, rolling hills, tea estates, rivers, and dams**.\n- It is a sparsely populated, rural region known for balancing adventure with tranquil introspection.\n\n## ✨ Highlights\n- **Prehistoric History:** Home to the **Edakkal Caves**, featuring Neolithic-era petroglyphs.\n- **Cultural Heritage:** A melting pot of indigenous tribal civilizations and traditional agrarian practices.\n- **Biodiversity:** A sanctuary for wildlife, offering opportunities to spot elephants, deer, and diverse bird species.\n- **Agricultural Soul:** Sprawling **tea and coffee plantations** that define the local economy and scenery.\n\n## 🌤️ Current Weather\n- **Temperature:** 21.54°C\n- **Conditions:** Overcast clouds\n- **Humidity:** 97%\n\n## 🏛️ Must-Visit Spots\n- **Chembra Peak:** The district's highest point, famous for its heart-shaped lake.\n- **Wayanad Wildlife Sanctuary:** Ideal for wildlife safaris.\n- **Edakkal Caves:** Historic site with ancient rock carvings.\n- **Pookode Lake:** A serene spot for boat rides.\n- **Meenmutty Waterfalls:** A three-tiered cascade reached via a forest hike.\n- **Kuruva Dweep:** Protected river islands perfect for bird watching and quiet walks.\n\n## 🍽️ Local Cuisine\n- **Breakfast:** 'Puttu' served with 'Kadala' curry.\n- **Staples:** 'Pathiri' (thin rice bread) paired with spicy meat or vegetable stews.\n- **Specialties:** Bamboo rice dishes, authentic **Malabar biryani**, and 'kallumakkaya' (mussels).\n- **Beverages:** Freshly brewed local coffee and tea grown in the region's plantations.\n\n## 📅 Best Time to Visit\n- **October to March:** Cool and pleasant; best for trekking and sightseeing.\n- **June to September (Monsoon):** Features heavy rainfall and a verdant landscape; good for those enjoying misty weather, though outdoor activities may be limited.\n- **April and May:** Warmer, pre-monsoon season; ideal for avoiding crowds.\n\n## 💡 Travel Tips\n- **Getting Around:** Use local **KSRTC buses** for affordability, or hire a **private taxi/jeep** for better flexibility on winding hill roads.\n- **Safety:** Always hire a local guide for forest treks, carry insect repellent, and avoid trekking during heavy rain to prevent slips.\n- **Accommodation:** Stay in **Kalpetta** or **Sultan Bathery** for better connectivity, or choose the **Vythiri** region for a secluded, forest-front experience.\n- **Etiquette:** Respect the environment by carrying your trash back and confirm local transport fares in advance.",
+      "context_snippet": "Wayanad - Overview: Wayanad is a lush, mountainous district nestled in the Western Ghats of Kerala, offering a serene escape defined by dense, verdant forests and rolling hills. Characterized by its r...",
+      "ground_truth_snippet": "Wayanad is a lush green district in the Western Ghats of Kerala, known for its wildlife sanctuaries, spice plantations, caves, and waterfalls. It is home to Wayanad Wildlife Sanctuary, Edakkal Caves w...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.5455,
+        "answer_relevancy": 0.6991,
+        "context_recall": 0.5
+      }
+    },
+    {
+      "question": "What wildlife can I see in Wayanad?",
+      "place_name": "Wayanad",
+      "answer": "🦁 **Wildlife in Wayanad**\n\n*   You can spot a variety of animals during a safari at the **Wayanad Wildlife Sanctuary**.\n*   Commonly sighted animals include **elephants** and **deer**.\n*   The region is also home to a variety of **vibrant bird species**.",
+      "context_snippet": "Wayanad - Overview: Wayanad is a lush, mountainous district nestled in the Western Ghats of Kerala, offering a serene escape defined by dense, verdant forests and rolling hills. Characterized by its r...",
+      "ground_truth_snippet": "The Wayanad Wildlife Sanctuary is part of the Nilgiri Biosphere Reserve and is home to elephants, tigers, leopards, deer, and various bird species. Tholpetty and Muthanga are the two main ranges for w...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.9093,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Is Wayanad good for trekking?",
+      "place_name": "Wayanad",
+      "answer": "### 🥾 Trekking in Wayanad\n\n*   **Ideal Timing:** The best time for trekking is between **October and March**, when the weather is cool and pleasant.\n*   **Top Spot:** You can trek to **Chembra Peak**, which is the highest point in the district and features a famous heart-shaped lake and panoramic views.\n*   **Hidden Gems:** The **Meenmutty Waterfalls** offer a trekking experience that takes you through lush forests to reach a stunning three-tiered cascade.\n*   **Safety Precautions:**\n    *   **Always hire a local guide** when trekking in dense forest areas to avoid getting lost.\n    *   **Avoid trekking during heavy rainfall** to prevent injuries on slippery trails.\n    *   Carry **insect repellent** to protect yourself from mosquitoes and leeches in high-altitude forests.\n    *   Carry a **basic first-aid kit**.\n    *   **Respect the environment** by carrying your trash back with you.",
+      "context_snippet": "Wayanad - Overview: Wayanad is a lush, mountainous district nestled in the Western Ghats of Kerala, offering a serene escape defined by dense, verdant forests and rolling hills. Characterized by its r...",
+      "ground_truth_snippet": "Yes, Wayanad is excellent for trekking. Popular treks include Chembra Peak (which has a heart-shaped lake), Pakshipathalam, Brahmagiri Hills, and Banasura Hill. The best trekking season is from Septem...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.5833,
+        "answer_relevancy": 0.7756,
+        "context_recall": 0.3333
+      }
+    },
+    {
+      "question": "Tell me about Varkala",
+      "place_name": "Varkala",
+      "answer": "## 🌍 Overview\n- **Varkala** is a coastal gem located in **Kerala**, perched atop dramatic cliffs that overlook the **Arabian Sea**.\n- It offers a unique combination of pristine beach relaxation and spiritual serenity.\n\n## ✨ Highlights\n- **Papanasam Beach**: Known for its therapeutic waters.\n- **Historic Temples**: The town is home to peaceful heritage temples that add to its spiritual atmosphere.\n\n## 🌤️ Current Weather\n- The current temperature is **26.08°C**.\n- The sky has **few clouds** and the humidity is **85%**.",
+      "context_snippet": "Varkala. Perched atop dramatic cliffs overlooking the Arabian Sea, Varkala offers a unique blend of pristine beach relaxation and spiritual serenity. Whether you're seeking the therapeutic waters of P...",
+      "ground_truth_snippet": "Varkala is a coastal town in Kerala known for its dramatic cliff overlooking the Arabian Sea, called Varkala Cliff or North Cliff. It is famous for its beach, mineral water springs, the ancient Janard...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.7463,
+        "context_recall": 0.5
+      }
+    },
+    {
+      "question": "What makes Varkala Beach unique?",
+      "place_name": "Varkala",
+      "answer": "✨ **Unique Features of Varkala**\n\n- **Dramatic Location**: It is perched atop **dramatic cliffs** that overlook the **Arabian Sea**.\n- **Therapeutic Waters**: It is home to **Papanasam Beach**, known for its therapeutic waters.\n- **Spiritual Serenity**: The area offers a unique combination of beach relaxation and **spiritual serenity**.\n- **Heritage**: The destination features peaceful, **historic temples**.",
+      "context_snippet": "Varkala. Perched atop dramatic cliffs overlooking the Arabian Sea, Varkala offers a unique blend of pristine beach relaxation and spiritual serenity. Whether you're seeking the therapeutic waters of P...",
+      "ground_truth_snippet": "Varkala Beach is unique because of the dramatic laterite cliff formations adjacent to the shoreline, known as Varkala Formation. Natural mineral water springs flow from these cliffs, believed to have ...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.7312,
+        "context_recall": 0.3333
+      }
+    },
+    {
+      "question": "Is Varkala suitable for surfing?",
+      "place_name": "Varkala",
+      "answer": "I am sorry, but the provided context does not contain any information regarding whether **Varkala** is suitable for surfing.",
+      "context_snippet": "Varkala. Perched atop dramatic cliffs overlooking the Arabian Sea, Varkala offers a unique blend of pristine beach relaxation and spiritual serenity. Whether you're seeking the therapeutic waters of P...",
+      "ground_truth_snippet": "Yes, Varkala has decent waves for surfing, especially for beginners and intermediate surfers. Several surf schools operate along the beach. The best surfing conditions are typically from June to Septe...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Tell me about Kumarakom",
+      "place_name": "Kumarakom",
+      "answer": "## 🌍 Overview\n- **Kumarakom** is a picturesque village located on the serene **Vembanad backwaters**.\n- It is defined by a tranquil cluster of emerald islands.\n- It serves as a peaceful escape into the lush landscape of **Kerala**.\n\n## ✨ Highlights\n- Known as a true paradise for **nature lovers**.\n- Offers world-class **birdwatching** opportunities.\n- Features a famous **bird sanctuary**.\n\n## 🌤️ Current Weather\n- **Temperature**: 25.67°C\n- **Conditions**: Overcast clouds\n- **Humidity**: 90%",
+      "context_snippet": "Kumarakom. Nestled on the serene Vembanad backwaters, Kumarakom is a picturesque village defined by its tranquil cluster of emerald islands. It is a true paradise for nature lovers, offering world-cla...",
+      "ground_truth_snippet": "Kumarakom is a cluster of small islands on Vembanad Lake in Kerala. It is a popular backwater destination known for its bird sanctuary, houseboat cruises, and Ayurvedic resorts. The Kumarakom Bird San...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.7034,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "question": "What birds can I see in Kumarakom?",
+      "place_name": "Kumarakom",
+      "answer": "The provided context does not list the specific bird species that can be seen in Kumarakom; it only mentions that the village is home to a **famous bird sanctuary** that offers **world-class birdwatching**.",
+      "context_snippet": "Kumarakom. Nestled on the serene Vembanad backwaters, Kumarakom is a picturesque village defined by its tranquil cluster of emerald islands. It is a true paradise for nature lovers, offering world-cla...",
+      "ground_truth_snippet": "The Kumarakom Bird Sanctuary, spread across 14 acres, is home to local and migratory birds including egrets, herons, cormorants, teals, waterfowl, cuckoos, and Siberian cranes. The best time for bird ...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Can I do a houseboat trip from Kumarakom?",
+      "place_name": "Kumarakom",
+      "answer": "- The provided context states that **Kumarakom** is nestled on the **Vembanad backwaters**, but it does not explicitly confirm whether houseboat trips are available.",
+      "context_snippet": "Kumarakom. Nestled on the serene Vembanad backwaters, Kumarakom is a picturesque village defined by its tranquil cluster of emerald islands. It is a true paradise for nature lovers, offering world-cla...",
+      "ground_truth_snippet": "Yes, Kumarakom is one of the top starting points for houseboat cruises in Kerala. Houseboats (kettuvallam) cruise through the scenic Vembanad Lake backwaters. You can book overnight stays with meals i...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Tell me about Kovalam",
+      "place_name": "Kovalam",
+      "answer": "## 🌍 Overview\nInformation currently unavailable.\n\n## 🌤️ Current Weather\n- **Temperature:** 27.05°C\n- **Condition:** Clear sky\n- **Humidity:** 78%\n\n***\n\n*Note: The provided context does not contain additional information regarding Kovalam's history, highlights, must-visit spots, cuisine, or travel tips.*",
+      "context_snippet": "Kovalam - History And Culture: Information currently unavailable.\n\nKovalam - Getting Around: Information currently unavailable.\n\nKovalam - Things To Do: Information currently unavailable.\n\nKovalam - O...",
+      "ground_truth_snippet": "Kovalam is a beach town near Thiruvananthapuram in Kerala, known for its crescent-shaped coastline with three adjacent beaches: Lighthouse Beach, Hawa Beach, and Samudra Beach. It became popular with ...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Which is the best beach in Kovalam?",
+      "place_name": "Kovalam",
+      "answer": "I am sorry, but the provided context does not contain any information regarding the beaches in **Kovalam**, so I cannot identify which one is the best.",
+      "context_snippet": "Kovalam - History And Culture: Information currently unavailable.\n\nKovalam - Getting Around: Information currently unavailable.\n\nKovalam - Things To Do: Information currently unavailable.\n\nKovalam - O...",
+      "ground_truth_snippet": "Lighthouse Beach is the most popular and vibrant beach in Kovalam. Named after the Vizhinjam Lighthouse at its southern end, it has a wide stretch of sand, numerous cafes and shops along the promenade...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "What is there to do in Kovalam besides the beach?",
+      "place_name": "Kovalam",
+      "answer": "The provided context does not contain information about activities or attractions in **Kovalam** other than its beaches.",
+      "context_snippet": "Kovalam - History And Culture: Information currently unavailable.\n\nKovalam - Getting Around: Information currently unavailable.\n\nKovalam - Things To Do: Information currently unavailable.\n\nKovalam - O...",
+      "ground_truth_snippet": "Beyond the beaches, Kovalam offers Ayurvedic spa treatments and wellness resorts, visits to the Vizhinjam Rock Cut Cave Temple (8th century), the Halcyon Castle, fishing village tours at Vizhinjam Har...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "question": "Compare Munnar and Wayanad for a family trip",
+      "place_name": "Munnar",
+      "answer": "The provided context only contains information regarding **Munnar**. It does not provide any details or data about **Wayanad**. Therefore, I cannot perform a comparison between the two locations. \n\nRegarding **Munnar**, here is what the context offers:\n\n## 🌍 Overview\n- **Munnar** is located in the lush hills of **Kerala**.\n- It is known for its vast, mist-covered **tea plantations**.\n- The destination offers a refreshingly cool climate.\n- It is characterized as a serene and picturesque sanctuary, often suited for honeymooners and nature lovers.\n\n## 🌤️ Current Weather\n- **Temperature:** 16.92°C\n- **Conditions:** Overcast clouds\n- **Humidity:** 99%",
+      "context_snippet": "Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...",
+      "ground_truth_snippet": "Both Munnar and Wayanad are hill stations in Kerala's Western Ghats. Munnar is known for tea plantations, cooler climate, and scenic viewpoints. Wayanad offers more wildlife, tribal heritage, and adve...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 0.6364,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.2
+      }
+    },
+    {
+      "question": "Is Kovalam safe for swimming?",
+      "place_name": "Kovalam",
+      "answer": "The provided context does not contain information regarding the safety of swimming in **Kovalam**.",
+      "context_snippet": "Kovalam - History And Culture: Information currently unavailable.\n\nKovalam - Getting Around: Information currently unavailable.\n\nKovalam - Things To Do: Information currently unavailable.\n\nKovalam - O...",
+      "ground_truth_snippet": "Kovalam's Lighthouse Beach and Hawa Beach are generally safe for swimming, with lifeguards on duty during the day. However, during monsoon season (June-August) strong currents and rough seas make swim...",
+      "source": "database_and_rag",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0
+      }
+    }
+  ],
+  "metadata": {
+    "timestamp": "2026-06-28T13:12:24.382085+00:00",
+    "num_samples": 20,
+    "elapsed_seconds": 1635.55,
+    "embedding_model": "all-MiniLM-L6-v2",
+    "llm_model": "gemini-2.0-flash (judge), gemini-3.1-flash-lite-preview (generation)",
+    "chroma_similarity_threshold": 0.5
+  }
+}

@@ -4,8 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 from ..database import Base
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
-
+from typing import Optional, List, Dict, Any
 class Place(Base):
     __tablename__ = "places"
 
@@ -107,6 +106,9 @@ class PlaceResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    intent: Optional[str] = None
+    destination: Optional[str] = None
+    destinations: Optional[List[str]] = None
     budget: Optional[int] = None
     session_id: Optional[str] = None  # Identifies the conversation thread for multi-turn memory
     traveler_type: Optional[str] = None
@@ -120,6 +122,16 @@ class ChatRequest(BaseModel):
     num_days: Optional[int] = None
     pacing: Optional[str] = None  # "relaxed" or "packed"
     meal_preference: Optional[str] = None  # "fixed" or "flexible"
+    crowd_aware: Optional[bool] = None  # Whether to consider crowd data
+    crowd_precision: Optional[str] = None  # "precise" (SerpAPI) or "approximate" (LLM estimate)
+    weather_aware: Optional[bool] = None  # Whether to include weather forecast in itinerary
+    interests: Optional[str] = None
+    activity_level: Optional[str] = None
+    kids_friendly: Optional[bool] = None
+    dietary_restrictions: Optional[str] = None
+    target_place: Optional[str] = None
+    target_day: Optional[int] = None
+    conversation_history: Optional[list] = None  # Previous messages for restoring context on loaded sessions
 
 class HotelResult(BaseModel):
     name: str
@@ -182,10 +194,14 @@ class ItinerarySlot(BaseModel):
     travel_to_next: Optional[str] = None  # "🚗 15 mins drive"
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    thumbnail: Optional[str] = None
+    crowd_status: Optional[str] = None  # "Not Crowded" / "Moderately Crowded" / "Very Crowded" / "Unknown"
 
 class ItineraryDay(BaseModel):
     day_number: int
     theme: str
+    weather_summary: Optional[str] = None  # e.g. "☀️ Clear, 24-33°C, humidity 45%"
+    weather_tip: Optional[str] = None  # Actionable weather advice for the day
     slots: List[ItinerarySlot]
 
 class ItineraryResult(BaseModel):
@@ -195,6 +211,15 @@ class ItineraryResult(BaseModel):
     start_location: Optional[str] = None
     meal_preference: Optional[str] = None  # "fixed" or "flexible"
     days: List[ItineraryDay]
+
+class SimilarPlacesRequest(BaseModel):
+    destination: str
+    query: str
+
+class EditItineraryRequest(BaseModel):
+    existing_itinerary: ItineraryResult
+    added_places: List[Dict[str, Any]]
+    removed_places: Optional[List[Dict[str, Any]]] = None
 
 class ChatResponse(BaseModel):
     response: str

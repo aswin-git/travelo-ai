@@ -6,6 +6,7 @@ from typing import List, Optional
 from ..config import settings
 from .gemini_service import summarize_reviews
 from ..utils.logger import get_logger
+from .cache_service import cached_serpapi_call, TTL_6H, TTL_12H
 from ..models.place_model import ReviewSummary
 from sqlalchemy.orm import Session
 import uuid
@@ -40,8 +41,7 @@ def get_place_reviews(place_name: str) -> List[str]:
 
     def fetch_from_params(params):
         try:
-            search = GoogleSearch(params)
-            results = search.get_dict()
+            results = cached_serpapi_call("review_lookup", params, ttl=TTL_12H)
             
             # 1. Try place_results (Specific Landmark)
             target = results.get("place_results")
@@ -109,8 +109,7 @@ def get_place_reviews(place_name: str) -> List[str]:
             "api_key": api_key,
         }
         
-        review_search = GoogleSearch(review_params)
-        review_results = review_search.get_dict()
+        review_results = cached_serpapi_call("place_reviews", review_params, ttl=TTL_12H)
         
         logger.info(f"Review API Response keys: {list(review_results.keys())}")
         reviews_data = review_results.get("reviews", [])
@@ -126,8 +125,7 @@ def get_place_reviews(place_name: str) -> List[str]:
                 "gl": "in",
                 "api_key": api_key,
             }
-            pivot_search = GoogleSearch(pivot_params)
-            pivot_results = pivot_search.get_dict()
+            pivot_results = cached_serpapi_call("review_pivot", pivot_params, ttl=TTL_12H)
             
             locals = pivot_results.get("local_results", [])
             if locals:
@@ -136,8 +134,7 @@ def get_place_reviews(place_name: str) -> List[str]:
                 if new_data_id:
                     logger.info(f"Pivoting to reviews for: {best_attraction.get('title')} ({new_data_id})")
                     review_params["data_id"] = new_data_id
-                    review_search = GoogleSearch(review_params)
-                    review_results = review_search.get_dict()
+                    review_results = cached_serpapi_call("place_reviews", review_params, ttl=TTL_12H)
                     reviews_data = review_results.get("reviews", [])
 
         # Extract 'snippet' or 'text'
@@ -195,8 +192,7 @@ def get_place_description(place_name: str) -> Optional[str]:
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("place_description", params, ttl=TTL_12H)
         
         # 1. Try Knowledge Graph description
         kg = results.get("knowledge_graph", {})

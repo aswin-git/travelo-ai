@@ -27,9 +27,9 @@
                 🧭 Travelo AI — RAG Evaluation Report
             </h1>
             <p style="color:#64748b; font-size:0.9em;">
-                Generated: 2026-05-30T08:23:56.290045+00:00 &nbsp;|&nbsp;
-                Samples: 3 &nbsp;|&nbsp;
-                Duration: 290.31s &nbsp;|&nbsp;
+                Generated: 2026-06-28T15:14:24.979197+00:00 &nbsp;|&nbsp;
+                Samples: 20 &nbsp;|&nbsp;
+                Duration: 1748.82s &nbsp;|&nbsp;
                 Threshold: 0.5
             </p>
             <p style="color:#475569; font-size:0.8em; margin-top:4px;">
@@ -45,42 +45,42 @@
         <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:40px;">
             
         <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
-                     border:1px solid #ef444433;">
+                     border:1px solid #22c55e33;">
             <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Faithfulness</div>
-            <div style="font-size:2.2em; font-weight:700; color:#ef4444;">0.53</div>
+            <div style="font-size:2.2em; font-weight:700; color:#22c55e;">0.92</div>
             <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Is the answer grounded in the retrieved context?</div>
             <div style="font-size:0.75em; color:#475569; margin-top:8px;">
-                min: 0.375 &nbsp;|&nbsp; max: 0.7143 &nbsp;|&nbsp; std: 0.1716
+                min: 0.3077 &nbsp;|&nbsp; max: 1.0 &nbsp;|&nbsp; std: 0.1563
+            </div>
+        </div>
+        
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #22c55e33;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Answer Relevancy</div>
+            <div style="font-size:2.2em; font-weight:700; color:#22c55e;">0.83</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Does the answer address the user's question?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: 0.6896 &nbsp;|&nbsp; max: 0.9843 &nbsp;|&nbsp; std: 0.084
+            </div>
+        </div>
+        
+        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
+                     border:1px solid #22c55e33;">
+            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Context Precision</div>
+            <div style="font-size:2.2em; font-weight:700; color:#22c55e;">0.81</div>
+            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Is the retrieved context relevant?</div>
+            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
+                min: 0.7003 &nbsp;|&nbsp; max: 0.9081 &nbsp;|&nbsp; std: 0.1
             </div>
         </div>
         
         <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
                      border:1px solid #eab30833;">
-            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Answer Relevancy</div>
-            <div style="font-size:2.2em; font-weight:700; color:#eab308;">0.72</div>
-            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Does the answer address the user's question?</div>
-            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
-                min: 0.6154 &nbsp;|&nbsp; max: 0.8777 &nbsp;|&nbsp; std: 0.1365
-            </div>
-        </div>
-        
-        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
-                     border:1px solid #94a3b833;">
-            <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Context Precision</div>
-            <div style="font-size:2.2em; font-weight:700; color:#94a3b8;">N/A</div>
-            <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Is the retrieved context relevant?</div>
-            <div style="font-size:0.75em; color:#475569; margin-top:8px;">
-                min: N/A &nbsp;|&nbsp; max: N/A &nbsp;|&nbsp; std: N/A
-            </div>
-        </div>
-        
-        <div style="background:#1e293b; border-radius:12px; padding:24px; flex:1; min-width:200px;
-                     border:1px solid #ef444433;">
             <div style="font-size:0.85em; color:#94a3b8; margin-bottom:4px;">Context Recall</div>
-            <div style="font-size:2.2em; font-weight:700; color:#ef4444;">0.11</div>
+            <div style="font-size:2.2em; font-weight:700; color:#eab308;">0.71</div>
             <div style="font-size:0.75em; color:#64748b; margin-top:6px;">Does the context contain needed information?</div>
             <div style="font-size:0.75em; color:#475569; margin-top:8px;">
-                min: 0.0 &nbsp;|&nbsp; max: 0.3333 &nbsp;|&nbsp; std: 0.1925
+                min: 0.1 &nbsp;|&nbsp; max: 1.0 &nbsp;|&nbsp; std: 0.14
             </div>
         </div>
         
@@ -108,30 +108,200 @@
         <tr style="border-bottom:1px solid #1e293b;">
             <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Munnar</td>
             <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Tell me about Munnar</td>
-            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:85px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.71</span></div></td>
-            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:73px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.62</span></div></td>
-            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
-            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:39px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.33</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:101px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.85</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:88px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.74</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:93px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.78</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:66px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.56</span></div></td>
             <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
         </tr>
         
         <tr style="border-bottom:1px solid #1e293b;">
             <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Munnar</td>
             <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What are the best things to do in Munnar?</td>
-            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:60px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.50</span></div></td>
-            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:81px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.68</span></div></td>
-            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
-            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:0px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:112px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.94</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:103px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.87</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:98px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.82</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:112px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.93</span></div></td>
             <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
         </tr>
         
         <tr style="border-bottom:1px solid #1e293b;">
             <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Munnar</td>
             <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What is the best time to visit Munnar?</td>
-            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:45px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.38</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:113px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.95</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:97px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.82</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:104px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.87</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Alappuzha</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Tell me about Alappuzha</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:117px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.98</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:82px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.69</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:92px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.77</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:88px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.73</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Alappuzha</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What can I do in Alappuzha?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:88px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.74</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:100px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.84</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:107px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.90</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Alappuzha</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">How do I get to Alappuzha from Kochi?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:102px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.85</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:92px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.77</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:86px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.72</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Wayanad</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Tell me about Wayanad</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:84px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.71</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:108px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.91</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:80px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.67</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Wayanad</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What wildlife can I see in Wayanad?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:110px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.92</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:108px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.90</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:88px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.74</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:84px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.70</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Wayanad</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Is Wayanad good for trekking?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:93px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.78</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:103px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.86</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Varkala</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Tell me about Varkala</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:97px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.81</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:108px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.90</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:79px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.66</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Varkala</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What makes Varkala Beach unique?</td>
             <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:105px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.88</span></div></td>
-            <td style="padding:12px 8px;"><div style="color:#94a3b8;">—</div></td>
-            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:0px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:110px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.92</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:85px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.71</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:85px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.71</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Varkala</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Is Varkala suitable for surfing?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:98px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.82</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:98px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.82</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:100px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.84</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:115px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.97</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kumarakom</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Tell me about Kumarakom</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:114px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.95</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:92px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.77</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:97px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.81</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:55px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.46</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kumarakom</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What birds can I see in Kumarakom?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:108px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.90</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:99px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.83</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:75px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.63</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kumarakom</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Can I do a houseboat trip from Kumarakom?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:110px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.92</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:94px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.79</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:61px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.51</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kovalam</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Tell me about Kovalam</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:94px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.79</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:105px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.88</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:84px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.71</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kovalam</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Which is the best beach in Kovalam?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:105px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.88</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:118px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.98</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:107px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.89</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:12px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.10</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kovalam</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">What is there to do in Kovalam besides the beach?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:105px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.88</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:91px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.76</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:84px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.70</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:102px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.85</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Munnar</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Compare Munnar and Wayanad for a family trip</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:36px;height:100%;background:#ef4444;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#ef4444;font-weight:600;">0.31</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:107px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.90</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:101px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.85</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:77px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.62</span></div></td>
+            <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
+        </tr>
+        
+        <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:12px 8px; color:#e2e8f0; font-size:0.85em; max-width:120px; word-wrap:break-word;">Kovalam</td>
+            <td style="padding:12px 8px; color:#cbd5e1; font-size:0.85em; max-width:250px; word-wrap:break-word;">Is Kovalam safe for swimming?</td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:120px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">1.00</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:101px;height:100%;background:#22c55e;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#22c55e;font-weight:600;">0.84</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:84px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.70</span></div></td>
+            <td style="padding:12px 8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:120px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;"><div style="width:80px;height:100%;background:#eab308;border-radius:4px;"></div></div><span style="font-size:0.85em;color:#eab308;font-weight:600;">0.67</span></div></td>
             <td style="padding:12px 8px; color:#64748b; font-size:0.8em;">database_and_rag</td>
         </tr>
         
@@ -147,22 +317,55 @@
         <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
             <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
                 <strong>#1</strong> — Tell me about Munnar
-                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.71</span>
-                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.62</span>
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.85</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.74</span>
             </summary>
             <div style="padding:0 16px 16px 16px;">
                 <div style="margin-bottom:12px;">
                     <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
                     <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
-                        Munnar is a breathtaking hill station in Kerala, famous for its sprawling, mist-covered tea plantations and refreshing climate. It's an ideal sanctuary for honeymooners and nature lovers looking for a serene, picturesque escape. 
+                        ## 🌍 Overview
+**Munnar** is a stunning hill station in the Idukki district of **Kerala**, situated at an elevation of **1,600 meters** in the **Western Ghats**. Historically a summer resort for British colonial officials, it is now world-renowned for its emerald-green tea plantations, misty mountain landscapes, and as a premier destination for honeymooners.
 
-If you're planning a visit soon, the weather is currently a pleasant 22.94°C with broken clouds—perfect for exploring the lush hills!
+## ✨ Highlights
+- **Tea Heritage:** The region’s identity is defined by its extensive tea plantations, which saw rapid growth during the British Raj under pioneers like **John Daniel Munro**.
+- **Geography:** The town is named after the confluence of three rivers: the **Madupetti**, **Nallathanni**, and **Periavaru**.
+- **Cultural Mosaic:** Due to its history of attracting workers from Kerala and Tamil Nadu, the area features a unique blend of cultures where both **Malayalam** and **Tamil** are widely spoken.
+
+## 🏛️ Must-Visit Spots
+- **Eravikulam National Park:** Famous for the endangered **Nilgiri Tahr** and the rugged terrain of **Rajamala**.
+- **Lockhart Tea Museum:** A great place for tea enthusiasts to learn about orthodox tea processing.
+- **Mattupetty:** Known for its tranquil lakes where visitors can enjoy a 'Kashmiri-Shikara' boat ride.
+- **Marayoor:** A unique site featuring the only natural sandalwood forests in Kerala and prehistoric Stone Age murals.
+- **Signal Point:** A lesser-known spot (formerly 'Cigarette Point') offering breathtaking, quiet views of the valley.
+- **Top Station:** Offers an enchanting panoramic view of the Western Ghats, perfect for trekkers.
+
+## 🍽️ Local Cuisine
+- **Kerala Staples:** Enjoy traditional **Fish Curry** prepared with fresh spices and coconut oil.
+- **Breakfast/Snacks:** Try **idiyappam** (string hoppers) with stew, or street food like **Gobi noodles** and **chilly bhaji** near the bus stand.
+- **Tea:** Always pair local meals with a cup of piping-hot **Munnar tea**.
+- **Dining Recommendations:** Visit **Saravana Bhavan** for authentic South Indian vegetarian meals or **Guru's Restaurant** for North Indian classics.
+
+## 🌤️ Current Weather
+- The town is currently experiencing **16.25°C** with **moderate rain** and high humidity (99%).
+
+## 📅 Best Time to Visit
+- **October to March:** The optimal window; weather is cool and perfect for trekking and sightseeing.
+- **Note on Rain:** Expect significant monsoon activity from **April to November**.
+- **Neelakurinji Bloom:** A rare, once-in-a-lifetime event where a specific flower blooms every 12 years (last seen in 2018).
+
+## 💡 Travel Tips
+- **Getting Around:** The town is divided into **Old Munnar** (tourist info/historic charm) and **Munnar town** (bus hub/commerce). For sightseeing, hire a **private taxi** with an experienced driver, as roads are narrow and prone to heavy fog.
+- **Safety:** Always carry a flashlight, as it gets dark quickly after sunset. If driving, aim to complete your descent by **4 PM** to avoid thick mist.
+- **Stay:** Choose **Chinnakkanal** for a secluded, luxurious escape or the town center for budget-friendly guesthouses.
                     </div>
                 </div>
                 <div style="margin-bottom:12px;">
                     <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
                     <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
-                        Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...
+                        === General Description ===
+### Overview
+Munnar is a stunning hill station nestled in the Western Ghats of Kerala, sitting at an elevation of 1,600 meters. Famous for its sprawling, emerald-green tea ...
                     </div>
                 </div>
                 <div>
@@ -177,20 +380,32 @@ If you're planning a visit soon, the weather is currently a pleasant 22.94°C wi
         <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
             <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
                 <strong>#2</strong> — What are the best things to do in Munnar?
-                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#ef444422; color:#ef4444; font-weight:600; font-size:0.9em;">0.50</span>
-                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.68</span>
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.94</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.87</span>
             </summary>
             <div style="padding:0 16px 16px 16px;">
                 <div style="margin-bottom:12px;">
                     <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
                     <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
-                        Munnar is the perfect sanctuary for nature lovers and couples looking for a romantic escape. While the provided context highlights its lush hills and mist-covered tea plantations, you’ll find that exploring these sprawling estates, enjoying the refreshingly cool climate (currently a comfortable 22.94°C), and soaking in the serene, picturesque landscapes are the best ways to experience the magic of this hill station.
+                        ### 🎭 Things to Do in Munnar
+
+*   **Wildlife & Nature:** Visit **Eravikulam National Park** to see the endangered **Nilgiri Tahr** and explore the rugged terrain of **Rajamala**.
+*   **Tea Tourism:** Tour the **Lockhart Tea Museum** for a guided look at orthodox tea processing and the region's plantation history.
+*   **Romantic Experiences:** Take a **'Kashmiri-Shikara' boat ride** on the serene lakes near **Mattupetty** for a scenic, romantic outing.
+*   **Adventure Activities:** Engage in **rock climbing and rappelling** on the steep 30-meter rock faces, or go for a **scenic trek** toward **Top Station** for panoramic views of the **Western Ghats**.
+*   **Heritage Exploration:** Visit the **High Range Club** (a colonial-era hub), the **Munnar Supply Association (MSA)** building, and historic sites like **Christ Church** in **Old Munnar**.
+*   **Hidden Gems:** 
+    *   Explore **Marayoor**, known for its natural **sandalwood forests** and prehistoric Stone Age murals.
+    *   Visit **Signal Point** (historically 'Cigarette Point') for a quiet, breathtaking view of the valley.
+*   **Photography:** Stop at the various **natural waterfalls** along the roads leading to Munnar, which serve as excellent spots for photography.
                     </div>
                 </div>
                 <div style="margin-bottom:12px;">
                     <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
                     <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
-                        Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...
+                        === General Description ===
+### Overview
+Munnar is a stunning hill station nestled in the Western Ghats of Kerala, sitting at an elevation of 1,600 meters. Famous for its sprawling, emerald-green tea ...
                     </div>
                 </div>
                 <div>
@@ -205,26 +420,802 @@ If you're planning a visit soon, the weather is currently a pleasant 22.94°C wi
         <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
             <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
                 <strong>#3</strong> — What is the best time to visit Munnar?
-                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#ef444422; color:#ef4444; font-weight:600; font-size:0.9em;">0.38</span>
-                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.88</span>
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.95</span>
             </summary>
             <div style="padding:0 16px 16px 16px;">
                 <div style="margin-bottom:12px;">
                     <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
                     <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
-                        While the provided context doesn't specify the best month to visit, Munnar's refreshingly cool climate and mist-covered landscapes make it a year-round destination for those seeking a serene escape. Given the current pleasant weather of 22.94°C, it’s an ideal time for nature lovers and honeymooners to enjoy the lush tea plantations.
+                        📅 **Best Time to Visit Munnar**
+
+- The **optimal time** to visit is during the post-monsoon period from **October to March**.
+- This window offers **cool, pleasant weather**, which is ideal for trekking and sightseeing.
+- Daytime temperatures typically range between **22°C and 26°C**.
+- **Important Note:** Temperatures can drop significantly at night, so ensure you pack warm clothing.
+- **Monsoon Season:** Be prepared for significant rainfall if you visit between **April and November**.
+- **Rare Event:** If you wish to see the **Neelakurinji flower**, which blooms every 12 years (last seen in late 2018), you must time your trip specifically to its blooming cycle; however, expect very heavy crowds during this time.
                     </div>
                 </div>
                 <div style="margin-bottom:12px;">
                     <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
                     <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
-                        Munnar. Nestled in the lush hills of Kerala, Munnar enchants travelers with its vast, mist-covered tea plantations and refreshingly cool climate. It is the perfect romantic escape, offering a serene a...
+                        === General Description ===
+### Overview
+Munnar is a stunning hill station nestled in the Western Ghats of Kerala, sitting at an elevation of 1,600 meters. Famous for its sprawling, emerald-green tea ...
                     </div>
                 </div>
                 <div>
                     <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
                     <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
                         The best time to visit Munnar is from September to May. The monsoon season (June-August) brings heavy rainfall. Winter months (December-February) are cool and ideal for sightseeing, while summer (Marc...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#4</strong> — Tell me about Alappuzha
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.98</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.69</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ## 🌍 Overview
+**Alappuzha**, often referred to as **Alleppey** or the "Venice of the East," is a mesmerizing coastal district in **Kerala**, India. It is uniquely situated as a sandy strip between the **Laccadive Sea** and an intricate network of freshwater rivers and backwaters. Known for its serene atmosphere, it is one of the few places in the world where traditional paddy cultivation occurs below sea level.
+
+## 🏛️ History & Culture
+- **Ancient Roots:** The area has been a significant spice hub since the 1st century AD, when it was known as **Baraces** to Roman scholars.
+- **Modern Development:** Its modern identity was largely shaped in the 18th century by **Diwan Raja Kesavadas**, who engineered the iconic canal system and established it as a major port city.
+- **Diverse Heritage:** The region is a melting pot of cultures, featuring a strong Christian heritage dating back to the 1st century, alongside vibrant temple festivals where caparisoned elephants are a key attraction.
+- **Industry:** The district is the hub of the **coir (coconut fiber) industry**, which, alongside traditional agriculture, forms the bedrock of the local economy.
+
+## 🏛️ Must-Visit Spots
+- **Kuttanad:** Known as the "Rice Bowl of Kerala," this area features unique below-sea-level farming and tranquil backwater villages.
+- **Mannarasala Sree Nagaraja Temple:** A hidden gem; this sacred snake temple is set in a lush forest and is uniquely managed by a female priestess.
+- **Alappuzha Beach:** A beautiful spot for sunset views, particularly away from the main lighthouse area for a more intimate experience.
+- **Ambalapuzha:** Essential for its deep historical significance and its renowned temple.
+
+## 🍽️ Local Cuisine
+- **Seafood Specialties:** Focus on fresh prawns and pearl spot fish prepared with local coconut and spices.
+- **Traditional Feasts:** Enjoy a **Kerala sadya**, a hearty vegetarian feast served on a banana leaf.
+- **Local Treats:** Don’t miss **rose palpayasam**, a creamy milk dessert served during festivals, and fresh **toddy** paired with spicy grilled prawns from backwater shacks.
+
+## 📅 Best Time to Visit
+- **September to March:** The optimal time for pleasant weather and manageable humidity.
+- **June to August (Monsoon):** Heavy rains transform the landscape into a lush, verdant paradise, popular for "monsoon tourism" and Ayurvedic wellness retreats.
+- **April to May:** Can be hot and humid, though proximity to the ocean offers some relief.
+
+## 💡 Travel Tips
+- **Houseboat Cruises:** A multi-day cruise is the quintessential experience for witnessing rural life along the canals.
+- **Getting Around:** Use the government-run **SWTD ferry services** for scenic, budget-friendly transit. For land, use **autorickshaws** (negotiate fares in advance) or hire a taxi for maximum flexibility.
+- **Safety:** Book houseboats and tours through reputable operators rather than touts at stations. Respect local customs by dressing modestly when visiting temples.
+- **Language:** While **Malayalam** is the primary language, the **Konkani** language is also spoken by a significant segment of the population due to historical migrations.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Alappuzha, often affectionately known as the 'Venice of the East,' is a mesmerizing labyrinth of canals, backwaters, and lagoons located in the southern Indian...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Alappuzha, also known as Alleppey, is a city in Kerala famous for its houseboat cruises through the backwaters, a network of lagoons, canals, and lakes. It is often called the 'Venice of the East'. Th...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#5</strong> — What can I do in Alappuzha?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.74</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ## 🏛️ Things to Do in Alappuzha
+
+There are many ways to experience the beauty and culture of this backwater destination:
+
+*   **Houseboat Cruises:** Embark on a multi-day cruise through the remote backwaters to witness the daily rhythms of local village life.
+*   **Temple Festivals:** Immerse yourself in the local culture by attending vibrant temple festivals, which feature traditional music and grand processions of caparisoned elephants.
+*   **Ayurvedic Wellness:** Relax and rejuvenate with world-class **Ayurvedic massages**, a staple of the region's wellness offerings.
+*   **Explore Kuttanad:** Visit the "Rice Bowl of Kerala," known for its unique below-sea-level paddy cultivation. You can tour this area by bicycle or by utilizing the local boat networks.
+*   **Coir Industry Insight:** Engage in a **coir-making demonstration** to learn about Alappuzha’s primary industry.
+*   **Beach Relaxation:** Head to the serene beaches for beautiful sunset views after spending your day navigating the canals.
+*   **Hidden Gems:** 
+    *   Visit the **Sree Nagaraja Temple in Mannarasala**, a sacred snake temple managed by a female priestess.
+    *   Find authentic, home-cooked meals in small, family-run eateries tucked along the quieter canals of **Kuttanad**.
+    *   Discover the quieter, lesser-known stretches of the beach for a more intimate seaside experience.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Alappuzha, often affectionately known as the 'Venice of the East,' is a mesmerizing labyrinth of canals, backwaters, and lagoons located in the southern Indian...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        In Alappuzha you can take a houseboat cruise through the Kerala backwaters, visit Alappuzha Beach, explore Marari Beach, see the Revi Karunakaran Museum, visit Krishnapuram Palace, and experience the ...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#6</strong> — How do I get to Alappuzha from Kochi?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.85</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ### 🚌 How to get from Kochi to Alappuzha
+
+You can reach **Alappuzha** from **Kochi** using the following transport options:
+
+*   **Bus:**
+    *   **KSRTC** operates regular bus services.
+    *   The journey takes approximately **1 hour and 45 minutes**.
+    *   Tickets cost around **₹75**.
+*   **Train:**
+    *   Train services are available from **Kochi** to **Alappuzha** as part of the wider Kerala rail network.
+*   **Taxi:**
+    *   **Tourist taxis** are available and offer the most convenient and flexible travel, especially if you are traveling as a group.
+    *   You can typically find them at major transport hubs like airports and railway stations.
+*   **Road:**
+    *   **Alappuzha** is well-connected to **Kochi** via **NH 66** (formerly NH 47).
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Alappuzha, often affectionately known as the 'Venice of the East,' is a mesmerizing labyrinth of canals, backwaters, and lagoons located in the southern Indian...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Alappuzha is about 53 km from Kochi. You can reach it by road (approximately 1.5 hours by car or bus via NH66), by train (Alappuzha railway station is well-connected), or by boat through the scenic ba...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#7</strong> — Tell me about Wayanad
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.71</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ## 🌍 Overview
+**Wayanad** is a stunning, mountainous district in Kerala’s **Western Ghats**. Known historically as "Vayal Naadu" (the land of paddy fields), it is a rural, sparsely populated region that offers a serene escape with high-altitude plateaus (reaching up to 2,100 meters), dense forests, and expansive tea estates.
+
+## ✨ Highlights
+- **Natural Beauty:** Famous for its misty hills, cascading waterfalls, and lush agricultural landscapes.
+- **Cultural Melting Pot:** The region features a unique blend of Malayali, Kannada, and tribal influences, with historical remnants of the Kadamba, Hoysala, and Mysore dynasties.
+- **Wildlife:** Home to significant sanctuaries like **Muthanga** and **Tholpetty**, where visitors can spot elephants, tigers, and deer.
+
+## 🏛️ Must-Visit Spots
+- **Edakkal Caves:** Famous for their ancient Neolithic rock engravings.
+- **Chembra Hills:** A premier trekking destination offering spectacular panoramic views.
+- **Thirunelli Temple:** A historic and serene spiritual site tucked deep within the mountains.
+- **Banasura Sagar Dam & Pookode Lake:** Ideal locations for boating and scenic relaxation.
+- **Vythiri:** Home to the unique "mirror temple" and picturesque tea estates.
+- **Kuruva Islands:** A remote and tranquil attraction accessible via the Mananthavady area.
+
+## 🍽️ Local Cuisine
+- **Bamboo Rice (Mulayari):** A rare, nutritious local harvest often served as a sweet 'payasam'.
+- **Authentic Kerala Fare:** Dishes prepared with locally grown spices and coffee.
+- **Plantation Treats:** Fresh home-made chocolates and spiced tea or coffee sourced from local estates.
+
+## 📅 Best Time to Visit
+- **October to May:** The ideal window for trekking and wildlife spotting with cool, pleasant weather.
+- **December to February:** Perfect for those seeking a "classic hill-station" experience with misty mornings, though nights can get quite chilly.
+- **June to September:** The monsoon season turns the district into a lush paradise, though heavy rains may limit outdoor adventure activities.
+
+## 💡 Travel Tips
+- **Getting Around:** The region lacks rail and air connectivity. Renting a car with a local driver is highly recommended for navigating the winding mountain passes.
+- **Safety:** Carry salt to manage leeches during hikes. Be cautious of monkeys at viewpoints like **Lakkidi** (keep car windows closed and hide food).
+- **Accommodation:** You can find budget lodges (under ₹500) or premium eco-resorts (₹2,000–₹4,000). Homestays are highly recommended for a more authentic, immersive experience.
+- **Planning:** Avoid night travel on forest routes as traffic is often restricted to protect wildlife. Always check road conditions in advance during the monsoon.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Wayanad is a breathtaking, mountainous district nestled within the lush Western Ghats of Kerala, offering a serene escape defined by its sprawling tea estates,...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Wayanad is a lush green district in the Western Ghats of Kerala, known for its wildlife sanctuaries, spice plantations, caves, and waterfalls. It is home to Wayanad Wildlife Sanctuary, Edakkal Caves w...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#8</strong> — What wildlife can I see in Wayanad?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.92</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.90</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        🦁 **Wildlife in Wayanad**
+
+*   **Diverse Species:** You can spot a wide variety of animals, including **elephants, deer, tigers, boars, and leopards**.
+*   **Birdlife:** The region hosts a diverse bird population, including the **Wayanad laughingthrush**, which is named after the region.
+*   **Key Sanctuaries:**
+    *   **Muthanga Wildlife Sanctuary:** Famous for its large population of elephants and other wildlife, including some **tigers**.
+    *   **Tholpetty Wildlife Sanctuary:** A premier spot for observing animals in their natural habitat.
+*   **Viewing Opportunities:** Wildlife enthusiasts can enjoy **jeep safaris** at both the Muthanga and Tholpetty sanctuaries to maximize their chances of spotting these animals in the wild.
+*   **Natural Corridors:** Because much of the district consists of protected forests, animals from neighboring sanctuaries in Karnataka and Tamil Nadu frequently stray into the **Begur forest range** and the forests surrounding **Muthanga**.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Wayanad is a breathtaking, mountainous district nestled within the lush Western Ghats of Kerala, offering a serene escape defined by its sprawling tea estates,...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        The Wayanad Wildlife Sanctuary is part of the Nilgiri Biosphere Reserve and is home to elephants, tigers, leopards, deer, and various bird species. Tholpetty and Muthanga are the two main ranges for w...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#9</strong> — Is Wayanad good for trekking?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.78</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ### 🥾 Trekking in Wayanad
+
+Wayanad is an excellent destination for trekking, offering a variety of trails through its mountainous, mist-covered landscape. 
+
+- **Top Trekking Spots:** The **Chembra Hills** are a priority for hikers, offering spectacular views of the surrounding region.
+- **Scenic Walks:** Beyond challenging treks, you can enjoy walking through the aromatic tea estates in **Vythiri**, which are often blanketed in morning mist.
+- **Best Time:** The ideal period for trekking is between **October and May**, when the weather is pleasant and cool.
+- **Monsoon Caution:** During the monsoon season (**June to September**), heavy rainfall can limit accessibility to trails and adventure sports.
+- **Pro Tips:**
+    - **Leech Protection:** Always carry a small pouch of salt, as it is a common and effective local remedy to dislodge leeches often found in the hills.
+    - **Local Insights:** Staying in a **homestay** is highly recommended; hosts can often suggest "hidden trails" that are not known to mass-market tourists and can help arrange private treks for you.
+    - **Safety:** Always verify local weather and road conditions in advance, as mountain weather can lead to unpredictable closures.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Wayanad is a breathtaking, mountainous district nestled within the lush Western Ghats of Kerala, offering a serene escape defined by its sprawling tea estates,...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Yes, Wayanad is excellent for trekking. Popular treks include Chembra Peak (which has a heart-shaped lake), Pakshipathalam, Brahmagiri Hills, and Banasura Hill. The best trekking season is from Septem...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#10</strong> — Tell me about Varkala
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.81</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ## 🌍 Overview
+**Varkala** is a captivating coastal town in Kerala, uniquely distinguished by its stunning Cenozoic sedimentary cliffs that rise dramatically above the Arabian Sea—a geological rarity on the otherwise flat Indian coastline. It serves as a dual-identity destination, functioning as both a bohemian tourist haven with a laid-back cliffside atmosphere and a deeply significant spiritual center.
+
+## ✨ Highlights
+- **Cliffside Promenade:** The town is famous for its North and South Cliff sections, featuring a vibrant promenade lined with cafes, shops, and accommodations overlooking the ocean.
+- **Spiritual Significance:** Known as 'Dakshin Kasi' (Benares of the South), it is home to the 2,000-year-old **Janardana Swami Temple**.
+- **Geological Rarity:** The dramatic cliffs are composed of Cenozoic sedimentary layers, including sand, shale, and lignite.
+- **Historical Roots:** Historically known as **Balita**, it has been a maritime trade hub since ancient times.
+
+## 🏛️ Must-Visit Spots
+- **Papanasam Beach:** A popular beach where the sea is believed to wash away sins.
+- **Janardana Swami Temple:** An ancient, 2,000-year-old temple that is a major pilgrimage site.
+- **Sivagiri Mutt:** The final resting place and headquarters of the social reformer **Sree Narayana Guru**.
+- **Kappil Lake:** A serene spot where the backwaters and the sea run parallel; ideal for kayaking and parasailing.
+- **Ponnumthuruthu Island:** A tranquil, lush island getaway located a short distance away.
+- **Odayam and Edava:** Coastal stretches north of the main beach that offer a quieter, more relaxed atmosphere.
+
+## 🍽️ Local Cuisine
+- **Kerala Thali:** A balanced, traditional platter of rice, vegetable curries, and side dishes.
+- **Fresh Seafood:** Cliffside restaurants often display the "catch of the day," which can be grilled or prepared in local coconut-based masalas.
+- **Little Tibet:** A niche cafe recommended for its momos and fresh fruit salads.
+- **German Bakery:** Located on the North Cliff, it is a popular spot for fresh bread and breakfast combinations.
+
+## 📅 Best Time to Visit
+- **Peak Season:** December 1st to March 31st offers the most bustling energy, with December and early January being the busiest.
+- **Weather:** The most pleasant period is from September to February, with temperatures ranging between 22°C and 28°C.
+- **Off-Season:** The monsoon months (June through September) are characterized by heavy rain and are ideal for travelers seeking lower prices and a more tranquil experience.
+
+## 💡 Travel Tips
+- **Getting Around:** Trains are the most efficient way to arrive. Locally, autorickshaws are the most common transport, while renting a scooter is highly recommended for exploring the scenic coastal roads.
+- **Accommodation:** Book well in advance for peak season (December–February) as high-value properties fill up quickly and prices rise.
+- **Safety:** Be cautious of unsolicited offers for tours or Ayurvedic treatments; always use registered practitioners. Stick to designated beach zones, as ocean currents can be strong.
+- **Etiquette:** When visiting religious sites, ensure you are wearing modest clothing.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Varkala is a captivating coastal town in Kerala, uniquely distinguished by its stunning Cenozoic sedimentary cliffs that rise dramatically above the Arabian Se...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Varkala is a coastal town in Kerala known for its dramatic cliff overlooking the Arabian Sea, called Varkala Cliff or North Cliff. It is famous for its beach, mineral water springs, the ancient Janard...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#11</strong> — What makes Varkala Beach unique?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.88</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.92</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ### 🌊 What Makes Varkala Beach Unique
+
+*   **Geological Rarity:** It is famously distinguished by stunning **Cenozoic sedimentary cliffs** that rise dramatically above the Arabian Sea—a unique feature on the otherwise flat Indian coastline.
+*   **Spiritual Significance:** Known as **Papanasam Beach**, the name translates to "destroyer of sins." Many visitors believe the sea has the power to wash away sins, and the area is frequently used by locals to scatter the ashes of cremated relatives into the water.
+*   **Dual Identity:** It serves as both a **bohemian tourist haven** with a laid-back, artistic vibe and a **profound spiritual center**, offering a slower, more serene atmosphere compared to other busy Kerala beach hubs.
+*   **Natural Phenomenon:** The black sand found on parts of the beach contains **thorium oxide**, a naturally occurring radioactive substance commonly found throughout Kerala.
+*   **Vibrant Cliffside Culture:** Unlike typical isolated beaches, the shoreline is backed by a **promenade** lined with shops, accommodations, and a wide variety of restaurants and cafes, allowing for a unique "cliff-top" social experience overlooking the ocean.
+*   **Scenic Sunsets:** The beach is widely celebrated for its dramatic cliff views and vibrant sunset experiences, making it a popular spot for both swimming and photography.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Varkala is a captivating coastal town in Kerala, uniquely distinguished by its stunning Cenozoic sedimentary cliffs that rise dramatically above the Arabian Se...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Varkala Beach is unique because of the dramatic laterite cliff formations adjacent to the shoreline, known as Varkala Formation. Natural mineral water springs flow from these cliffs, believed to have ...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#12</strong> — Is Varkala suitable for surfing?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.82</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.82</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        🛡️ **Surfing in Varkala**
+
+While Varkala is best known for swimming, cliffside walks, and yoga, there are specific areas suitable for surfing:
+
+*   **Odayam Beach:** This is a good spot for floating and enjoying a long breaker or surf zone. It is significantly less crowded than the main **Papanasam Beach** or **Black Beach**.
+*   **Copa Cabana:** Located on the **North Cliff**, this is a small surfing place that also organizes mangrove kayaking trips. You can inquire there for more information on local surf conditions and services. 
+*   **Conditions:** The beaches, particularly **Odayam** and **Black Beach**, offer gentle waves, making them conducive for those looking for a relaxed surf or float experience.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Varkala is a captivating coastal town in Kerala, uniquely distinguished by its stunning Cenozoic sedimentary cliffs that rise dramatically above the Arabian Se...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Yes, Varkala has decent waves for surfing, especially for beginners and intermediate surfers. Several surf schools operate along the beach. The best surfing conditions are typically from June to Septe...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#13</strong> — Tell me about Kumarakom
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.95</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.77</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ## 🌍 Overview
+**Kumarakom** is a serene village cluster situated on man-made islands within the **Vembanad backwaters** in **Kerala, India**. Renowned as a lush, tropical paradise, it is celebrated for its maze of canals, lagoons, and commitment to responsible tourism. It serves as a peaceful escape from modern life and is globally recognized for its biodiversity and literary significance.
+
+## ✨ Highlights
+- **Responsible Tourism:** The destination is a world-class example of sustainable travel, having won the **UNWTO Ulysses Award** and the **National Award for Best Responsible Tourism Project**.
+- **Literary Connection:** The village gained fame as the setting for Arundhati Roy’s novel, *The God of Small Things*.
+- **Backwater Life:** The area is defined by its rhythmic lifestyle, centered around houseboats, traditional fishing, and verdant paddy fields.
+
+## 🌤️ Current Weather
+- The current temperature is approximately **25.69°C** with **broken clouds** and high humidity (**88%**).
+
+## 🏛️ Must-Visit Spots
+- **Kumarakom Bird Sanctuary:** A 15-acre haven for birdwatchers, home to migratory species like the **Siberian crane**.
+- **Vembanad Lake:** The largest lake in Kerala, forming the heart of the region's backwater tourism.
+- **Baker House:** A historic site (now a luxury hotel) that played a significant role in the area's colonial history.
+- **Ayemenem:** An area accessible by boat along the **Meenachil River**, offering a glimpse into the landscape featured in local literature.
+- **Local Toddy Shops:** Authentic spots to experience local hospitality and traditional, spicy coastal cuisine.
+
+## 🍽️ Local Cuisine
+- **Karimeen Pollichathu:** Pearl spot fish marinated in spices and grilled in a banana leaf.
+- **Appam with Stew:** Soft, fermented rice bread paired with flavorful meat stews.
+- **Kappa:** A classic dish of tapioca sautéed with coconut, onions, and curry leaves.
+- **Madhura Kallu:** Sweet palm wine (toddy) served at local shops.
+
+## 📅 Best Time to Visit
+- **October to March:** The peak season, offering the most pleasant weather.
+- **June to August:** The monsoon season brings vibrant greenery and lush landscapes, though heavy rain can limit some outdoor activities.
+- **April to May:** Can be quite warm, but the proximity to water and dense foliage keeps the atmosphere relatively agreeable.
+
+## 💡 Travel Tips
+- **Transportation:** The nearest major airport is **Cochin International Airport** (75 km away), and the nearest railway station is in **Kottayam** (16 km away). Inside the village, travel by **houseboat, canoe, or auto-rickshaw**.
+- **Safety:** Always book houseboats through government-approved agencies. Respect local culture by dressing modestly, especially near religious sites.
+- **Accommodation:** Choose from luxury heritage resorts, private houseboats for an immersive experience, or rustic homestays for a closer look at village life.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Kumarakom is a captivating village cluster resting on the man-made islands of the Vembanad backwaters in Kerala, India. Often described as a lush, tropical par...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Kumarakom is a cluster of small islands on Vembanad Lake in Kerala. It is a popular backwater destination known for its bird sanctuary, houseboat cruises, and Ayurvedic resorts. The Kumarakom Bird San...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#14</strong> — What birds can I see in Kumarakom?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.90</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        🐦 **Birds of Kumarakom**
+
+If you are visiting the **Kumarakom Bird Sanctuary**, you can expect to see a variety of migratory and local waterbirds, including:
+
+*   **Siberian crane:** A notable migratory species that visits the sanctuary.
+*   **Egret:** Commonly spotted throughout the area.
+*   **Heron:** Frequently observed near the water bodies.
+*   **Waterfowl:** Various types are found in the sanctuary’s 15-acre habitat.
+*   **Ducks:** Local species are abundant.
+*   **Moorhens:** Often seen in the marshy areas.
+*   **Kingfisher:** Frequently sighted along the canals and lagoons.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Kumarakom is a captivating village cluster resting on the man-made islands of the Vembanad backwaters in Kerala, India. Often described as a lush, tropical par...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        The Kumarakom Bird Sanctuary, spread across 14 acres, is home to local and migratory birds including egrets, herons, cormorants, teals, waterfowl, cuckoos, and Siberian cranes. The best time for bird ...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#15</strong> — Can I do a houseboat trip from Kumarakom?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.92</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        Yes, you can absolutely do a houseboat trip in **Kumarakom**. It is considered the "quintessential" experience of the village.
+
+- **The Experience:** You can book a multi-day cruise through the **Vembanad backwaters**, allowing you to watch the sunrise and sunset directly from your private deck.
+- **Booking Advice:** Always book your houseboat through **recognized, government-approved agencies** to ensure you receive quality service, fair pricing, and proper safety equipment.
+- **Dining:** For an elevated experience, it is recommended that you specifically request a **skilled on-board chef** when booking your vessel.
+- **Navigation:** While houseboats traverse the main backwaters, adventure seekers can also rent smaller canoes or boats to navigate the narrower, shallower canals that larger houseboats cannot reach.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Kumarakom is a captivating village cluster resting on the man-made islands of the Vembanad backwaters in Kerala, India. Often described as a lush, tropical par...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Yes, Kumarakom is one of the top starting points for houseboat cruises in Kerala. Houseboats (kettuvallam) cruise through the scenic Vembanad Lake backwaters. You can book overnight stays with meals i...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#16</strong> — Tell me about Kovalam
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.79</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ## 🌍 Overview
+**Kovalam** is a beautiful coastal destination in southern **Kerala**, known for its crescent-shaped beaches, turquoise waters, and mineral-rich partially black sand. Originally a quiet fishing village, it has evolved into a premier destination that offers a relaxed, laid-back atmosphere, making it a perfect retreat for those looking to unwind.
+
+## ✨ Highlights
+- **Stunning Landscapes:** The coastline is framed by swaying coconut palms and striking rocky outcrops, offering some of the most breathtaking sunsets in the region.
+- **Historic Roots:** Kovalam gained fame in the 1930s when the royal family of **Travancore** established **Halcyon Castle** there, and later became a legendary stop on the global hippie trail in the 1970s.
+- **Wellness Haven:** It is world-renowned for traditional **Ayurvedic** treatments and yoga retreats, preserving ancient medicinal practices.
+
+## 🏛️ Must-Visit Spots
+- **Lighthouse Beach:** The southernmost beach, famous for its 36-meter tall beacon and lively promenade.
+- **Hawa Beach (Eve's Beach):** Ideal for quiet sunbathing and observing local fishing activity.
+- **Samudra Beach:** The most serene of the three main beaches, perfect for escaping the crowds.
+- **Vellayani Lake:** A pristine freshwater lake located inland, offering a peaceful glimpse into traditional village life.
+- **Vizhinjam Lighthouse:** Offers panoramic, elevated views of the stunning coastline.
+
+## 🍽️ Local Cuisine
+- **Chicken Fry:** A local specialty marinated in red masala paste and served with spicy chillies.
+- **Seafood:** Fresh daily catches are available at beach-front restaurants, grilled to your preference.
+- **Traditional Flavors:** Pair your meals with **'paratha'** (flaky flatbread) and try **'Kappa'** (tapioca) or **'Karimeen'** (pearl spot fish).
+- **Refreshments:** Don't miss out on organic tender coconut sold by street vendors.
+
+## 📅 Best Time to Visit
+- **November to February:** The ideal time to visit, featuring cool, dry weather and low humidity.
+- **March to May:** Warmer and more humid; great for travelers who prefer heat and want to avoid the peak season crowds.
+- **June to August (Monsoon):** Transforms the region into a lush green paradise. While swimming is dangerous during this time, it is excellent for travelers seeking discounted rates on luxury Ayurvedic rejuvenation retreats.
+
+## 💡 Travel Tips
+- **Safety:** Always heed lifeguard warnings regarding strong currents and undertows. Be mindful of small orange jellyfish in the water.
+- **Getting Around:** The area is compact enough to explore on foot. Taxis and auto-rickshaws are readily available from **Thiruvananthapuram** (about 20 minutes away). Always negotiate your fare beforehand.
+- **Accommodation:** Book in advance for peak season (winter). Choose cliff-side resorts for the best views or Ayurveda-focused resorts if you are visiting for a health retreat.
+- **Local Etiquette:** Avoid excessive displays of alcohol near public beach areas to respect local customs.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Kovalam is a picturesque coastal gem in southern Kerala, renowned for its pristine, crescent-shaped beaches framed by swaying coconut palms and striking rocky ...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Kovalam is a beach town near Thiruvananthapuram in Kerala, known for its crescent-shaped coastline with three adjacent beaches: Lighthouse Beach, Hawa Beach, and Samudra Beach. It became popular with ...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#17</strong> — Which is the best beach in Kovalam?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.88</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.98</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        The "best" beach in **Kovalam** depends on the type of experience you are seeking:
+
+- **Lighthouse Beach**: The most iconic and popular choice, featuring a **36-meter tall lighthouse** and a vibrant promenade with plenty of activity.
+- **Hawa Beach (Eve's Beach)**: Best for those who enjoy observing **local fishing activity** and a slightly quieter atmosphere for sunbathing.
+- **Samudra Beach**: The ideal spot if you want to escape the tourist buzz and prefer a **more serene, peaceful environment**.
+- **Ashoka Beach**: Located to the north, this is the best pick for a **rugged, elevated perspective** of the coastline from its sea-wall.
+
+**Note:** All of these beaches form a 17 km crescent-shaped coastline. Regardless of your choice, be aware that the sand is partially black due to mineral content and can get very hot, so wearing footwear is recommended. Always prioritize safety by following instructions from **lifeguards**, who are specifically stationed at **Lighthouse Beach** and **Hawa Beach**.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Kovalam is a picturesque coastal gem in southern Kerala, renowned for its pristine, crescent-shaped beaches framed by swaying coconut palms and striking rocky ...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Lighthouse Beach is the most popular and vibrant beach in Kovalam. Named after the Vizhinjam Lighthouse at its southern end, it has a wide stretch of sand, numerous cafes and shops along the promenade...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#18</strong> — What is there to do in Kovalam besides the beach?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.88</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#eab30822; color:#eab308; font-weight:600; font-size:0.9em;">0.76</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        ### 🏃 Activities Beyond the Beach
+
+*   **Ayurvedic Wellness:** The region is world-renowned for traditional **Ayurvedic treatments** and yoga sessions, which are available at most local resorts.
+*   **Historical Sightseeing:** Visit the historic **Vizhinjam Lighthouse**; the 36-meter tall beacon offers panoramic, breathtaking views of the coastline.
+*   **Nature & Village Life:** Take a peaceful day trip to the pristine **Vellayani Lake**, a freshwater destination perfect for observing local birdlife and traditional Kerala village life.
+*   **Cultural Exploration:** Walk through the **Vizhinjam fish landing center** to watch traditional fishing boats return with their daily haul for an authentic look at the region’s heritage.
+*   **Local Markets:** Explore the **Kovalam Junction**, which serves as the commercial heart of the area and offers local markets and shops. 
+*   **Shopping for Crafts:** Seek out the smaller, hidden shops located behind the main beach-front strip to find unique, locally-crafted artwork and better-priced souvenirs.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Kovalam is a picturesque coastal gem in southern Kerala, renowned for its pristine, crescent-shaped beaches framed by swaying coconut palms and striking rocky ...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Beyond the beaches, Kovalam offers Ayurvedic spa treatments and wellness resorts, visits to the Vizhinjam Rock Cut Cave Temple (8th century), the Halcyon Castle, fishing village tours at Vizhinjam Har...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#19</strong> — Compare Munnar and Wayanad for a family trip
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#ef444422; color:#ef4444; font-weight:600; font-size:0.9em;">0.31</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.90</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        The provided context contains detailed information about **Munnar**, including its tea plantations, colonial history, and adventure activities, but it **does not provide any information regarding Wayanad**.
+
+As a general travel tip for comparing the two for a family trip:
+
+*   **Munnar** is primarily known for its high-altitude tea gardens, cool misty climate, colonial-era architecture, and romantic landscapes. It is excellent for families who enjoy scenic viewpoints, museum visits (like the Lockhart Tea Museum), and short treks.
+*   **Wayanad** (based on general knowledge) is generally known for its more rugged, spread-out nature, focusing on spice plantations, wildlife sanctuaries, waterfalls, and caves. It often appeals more to families interested in nature-based adventure, wildlife spotting, and trekking.
+
+**Key factors to consider for your family:**
+*   **Terrain:** Munnar involves narrow, winding hill roads with significant elevation changes, which can be challenging for those prone to motion sickness.
+*   **Activities:** If your family prefers colonial history, tea garden tours, and boat rides, **Munnar** is a top choice. If you prefer deep forest treks, wildlife safaris, and exploring ancient caves, **Wayanad** is typically the preferred destination.
+*   **Weather:** Both are hill stations in the Western Ghats; check the specific season you are traveling, as both regions experience heavy monsoon rain which can impact outdoor activities and travel times.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Munnar is a stunning hill station nestled in the Western Ghats of Kerala, sitting at an elevation of 1,600 meters. Famous for its sprawling, emerald-green tea ...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Both Munnar and Wayanad are hill stations in Kerala's Western Ghats. Munnar is known for tea plantations, cooler climate, and scenic viewpoints. Wayanad offers more wildlife, tribal heritage, and adve...
+                    </div>
+                </div>
+            </div>
+        </details>
+        
+        <details style="background:#1e293b; border-radius:8px; margin-bottom:8px; padding:0;">
+            <summary style="padding:12px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9em;">
+                <strong>#20</strong> — Is Kovalam safe for swimming?
+                &nbsp;&nbsp; <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">1.00</span>
+                <span style="display:inline-block; padding:2px 10px; border-radius:9999px; background:#22c55e22; color:#22c55e; font-weight:600; font-size:0.9em;">0.84</span>
+            </summary>
+            <div style="padding:0 16px 16px 16px;">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Generated Answer</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#cbd5e1; font-size:0.85em; line-height:1.5;">
+                        🛡️ **Safety: Swimming in Kovalam**
+
+*   **Exercise extreme caution:** Swimming in the ocean at **Kovalam** can be dangerous, and strong currents and undertows can be life-threatening even for strong swimmers.
+*   **Heed lifeguard warnings:** Always adhere to the flags and instructions provided by lifeguards, who mark specific areas as dangerous; their warnings should be taken very seriously.
+*   **Beware of currents:** Be aware that currents can suddenly pull swimmers both down and out to sea.
+*   **Jellyfish hazards:** Be cautious of small **orange jellyfish** in the water, as they can cause painful stings. 
+*   **Monsoon risk:** Swimming is particularly dangerous during the monsoon season (June to August) due to rough seas.
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Retrieved Context (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        === General Description ===
+### Overview
+Kovalam is a picturesque coastal gem in southern Kerala, renowned for its pristine, crescent-shaped beaches framed by swaying coconut palms and striking rocky ...
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.75em; color:#94a3b8; margin-bottom:4px;">Ground Truth (snippet)</div>
+                    <div style="background:#0f172a; padding:10px 12px; border-radius:6px; color:#64748b; font-size:0.85em; line-height:1.5;">
+                        Kovalam's Lighthouse Beach and Hawa Beach are generally safe for swimming, with lifeguards on duty during the day. However, during monsoon season (June-August) strong currents and rough seas make swim...
                     </div>
                 </div>
             </div>

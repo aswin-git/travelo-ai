@@ -2,6 +2,7 @@ from serpapi import GoogleSearch
 from typing import List, Dict, Any, Optional
 from datetime import date, timedelta
 from ..config import settings
+from .cache_service import cached_serpapi_call, TTL_1H, TTL_6H
 from sqlalchemy.orm import Session
 from ..models.place_model import Hotel
 import uuid
@@ -49,7 +50,8 @@ def search_hotels(
     check_out: Optional[str] = None,
     adults: int = 2,
     budget: Optional[int] = None,
-    traveler_type: Optional[str] = None
+    traveler_type: Optional[str] = None,
+    hotel_type: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """Searches for hotels using SerpAPI and applies a 6-factor scoring engine."""
     api_key = settings.SERPAPI_KEY
@@ -64,9 +66,11 @@ def search_hotels(
         check_in_date = date.fromisoformat(check_in)
         check_out = (check_in_date + timedelta(days=2)).strftime("%Y-%m-%d")
 
+    query_prefix = f"{hotel_type} hotels" if hotel_type else "Hotels"
+    
     params = {
         "engine": "google_hotels",
-        "q": f"Hotels in {destination}",
+        "q": f"{query_prefix} in {destination}",
         "check_in_date": check_in,
         "check_out_date": check_out,
         "adults": str(adults),
@@ -77,8 +81,7 @@ def search_hotels(
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("hotels", params, ttl=TTL_1H)
         
         properties = results.get("properties", [])
         
@@ -169,8 +172,7 @@ def get_hotel_reviews(property_token: str) -> List[str]:
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("hotel_reviews", params, ttl=TTL_6H)
         reviews_data = results.get("reviews", [])
         
         # Extract the review text from the top reviews

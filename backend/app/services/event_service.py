@@ -1,6 +1,7 @@
 from serpapi import GoogleSearch
 from typing import List, Dict, Any
 from ..config import settings
+from .cache_service import cached_serpapi_call, TTL_2H
 from sqlalchemy.orm import Session
 from ..models.place_model import Event
 import uuid
@@ -60,8 +61,7 @@ def search_events(destination: str) -> List[Dict[str, Any]]:
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("events", params, ttl=TTL_2H)
         
         events_results = results.get("events_results", [])
         

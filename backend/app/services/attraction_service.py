@@ -1,6 +1,7 @@
 from serpapi import GoogleSearch
 from typing import List, Dict, Any, Optional
 from ..config import settings
+from .cache_service import cached_serpapi_call, TTL_6H
 from sqlalchemy.orm import Session
 from ..models.place_model import Attraction
 import uuid
@@ -36,11 +37,19 @@ def save_attractions_to_db(db: Session, attractions_data: List[Dict[str, Any]], 
         db.rollback()
         print(f"Error saving attractions to DB: {e}")
 
-def search_attractions(destination: str) -> List[Dict[str, Any]]:
+def search_attractions(
+    destination: str,
+    interests: Optional[str] = None,
+    activity_level: Optional[str] = None,
+    kids_friendly: Optional[bool] = None
+) -> List[Dict[str, Any]]:
     """Searches for top attractions in a city using SerpAPI's Google Maps engine.
     
     Args:
         destination: City or place name to search attractions in.
+        interests: Optional keywords like 'history', 'nature', etc.
+        activity_level: Optional 'high' or 'low'.
+        kids_friendly: True to filter for family-friendly places.
     
     Returns:
         List of attraction dicts with name, rating, description, thumbnail, and data_id.
@@ -50,9 +59,23 @@ def search_attractions(destination: str) -> List[Dict[str, Any]]:
         print("Attraction search error: SERPAPI_KEY not configured")
         return []
 
+    query_parts = ["top"]
+    if kids_friendly:
+        query_parts.append("family friendly kids")
+    if interests:
+        query_parts.append(interests)
+    if activity_level == "high":
+        query_parts.append("active outdoor")
+    elif activity_level == "low":
+        query_parts.append("relaxed indoor")
+    query_parts.append("attractions in")
+    query_parts.append(destination)
+    
+    query_str = " ".join(query_parts)
+
     params = {
         "engine": "google_maps",
-        "q": f"top rated attractions in {destination}",
+        "q": query_str,
         "type": "search",
         "hl": "en",
         "gl": "in",
@@ -60,13 +83,12 @@ def search_attractions(destination: str) -> List[Dict[str, Any]]:
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("attractions", params, ttl=TTL_6H)
         
         locals_results = results.get("local_results", [])
         
         attractions = []
-        for loc in locals_results[:10]:
+        for loc in locals_results[:20]:
             gps = loc.get("gps_coordinates") or {}
             attractions.append({
                 "name": loc.get("title", "Unknown Attraction"),
@@ -100,8 +122,7 @@ def get_attraction_reviews(data_id: str) -> List[str]:
     }
 
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        results = cached_serpapi_call("attraction_reviews", params, ttl=TTL_6H)
         reviews_data = results.get("reviews", [])
         
         # Extract the review text from the top reviews

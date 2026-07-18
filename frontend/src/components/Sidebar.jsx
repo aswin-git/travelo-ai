@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE } from '../config'
 
 export default function Sidebar({
   collapsed,
@@ -13,10 +14,11 @@ export default function Sidebar({
   const { user, signOut } = useAuth()
   const [chatSessions, setChatSessions] = useState([])
   const [savedItineraries, setSavedItineraries] = useState([])
+  const [savedItems, setSavedItems] = useState([])
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null) // { type, id }
 
-  const API = 'http://127.0.0.1:8000'
+  const API = API_BASE
 
   const authHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
@@ -44,20 +46,33 @@ export default function Sidebar({
     }
   }, [accessToken, authHeaders])
 
+  const fetchSavedItems = useCallback(async () => {
+    if (!accessToken) return
+    try {
+      const res = await fetch(`${API}/user/saved-items`, { headers: authHeaders() })
+      if (res.ok) setSavedItems(await res.json())
+    } catch (err) {
+      console.error('Failed to fetch saved items:', err)
+    }
+  }, [accessToken, authHeaders])
+
   useEffect(() => {
     fetchSessions()
     fetchItineraries()
-  }, [fetchSessions, fetchItineraries])
+    fetchSavedItems()
+  }, [fetchSessions, fetchItineraries, fetchSavedItems])
 
   // Expose refresh methods via window for App.jsx to call after saves
   useEffect(() => {
     window.__refreshSidebarSessions = fetchSessions
     window.__refreshSidebarItineraries = fetchItineraries
+    window.__refreshSidebarSavedItems = fetchSavedItems
     return () => {
       delete window.__refreshSidebarSessions
       delete window.__refreshSidebarItineraries
+      delete window.__refreshSidebarSavedItems
     }
-  }, [fetchSessions, fetchItineraries])
+  }, [fetchSessions, fetchItineraries, fetchSavedItems])
 
   const handleDeleteSession = async (sessionId) => {
     try {
@@ -102,7 +117,7 @@ export default function Sidebar({
       <div className="sidebar-header">
         {!collapsed && (
           <div className="sidebar-brand">
-            <div className="sidebar-logo-icon">🌍</div>
+            <img src="/logo.png" alt="Travelo AI Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             <span className="sidebar-logo-text">TRAVELO AI</span>
           </div>
         )}
@@ -180,6 +195,73 @@ export default function Sidebar({
                     </button>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+
+          {/* Preferred Places */}
+          <div className="sidebar-section">
+            <div className="sidebar-section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              PREFERED PLACES
+            </div>
+            <div className="sidebar-list">
+              {savedItems.length === 0 ? (
+                <div className="sidebar-empty">No preferred places</div>
+              ) : (
+                <>
+                  {['hotel', 'restaurant', 'attraction', 'event'].map(type => {
+                    const items = savedItems.filter(i => i.item_type === type);
+                    if (items.length === 0) return null;
+                    const typeLabel = type === 'hotel' ? 'Hotels' : type === 'restaurant' ? 'Restaurants' : type === 'attraction' ? 'Attractions' : 'Events';
+                    const icon = type === 'hotel' ? '🏨' : type === 'restaurant' ? '🍽️' : type === 'attraction' ? '🏛️' : '📅';
+
+                    return (
+                      <div key={type} style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          {icon} {typeLabel}
+                        </div>
+                        {items.map(item => (
+                          <div key={item.id} className="sidebar-item">
+                            <div className="sidebar-item-content">
+                              <div className="sidebar-item-title">
+                                {item.item_name}
+                              </div>
+                              <div className="sidebar-item-meta">
+                                <span>{item.destination}</span>
+                                {item.pinned_day && <span style={{ color: 'var(--primary)' }}>Pinned Day {item.pinned_day}</span>}
+                              </div>
+                            </div>
+                            <button
+                              className="sidebar-item-delete"
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                if (deleteConfirm?.type === 'item' && deleteConfirm?.id === item.id) {
+                                  try {
+                                    await fetch(`${API}/user/saved-items/${item.id}`, { method: 'DELETE', headers: authHeaders() })
+                                    setSavedItems(prev => prev.filter(i => i.id !== item.id))
+                                    setDeleteConfirm(null)
+                                    window.__refreshSavedItems?.() // refresh App.jsx state too
+                                  } catch (err) {
+                                    console.error('Failed to delete item', err)
+                                  }
+                                } else {
+                                  setDeleteConfirm({ type: 'item', id: item.id })
+                                  setTimeout(() => setDeleteConfirm(null), 3000)
+                                }
+                              }}
+                              title={deleteConfirm?.type === 'item' && deleteConfirm?.id === item.id ? 'Click to confirm' : 'Remove'}
+                            >
+                              {deleteConfirm?.type === 'item' && deleteConfirm?.id === item.id ? '✓' : '×'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </>
               )}
             </div>
           </div>
