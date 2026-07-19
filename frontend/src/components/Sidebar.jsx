@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { API_BASE } from '../config'
 
 export default function Sidebar({
@@ -12,6 +13,7 @@ export default function Sidebar({
   accessToken,
 }) {
   const { user, signOut } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [chatSessions, setChatSessions] = useState([])
   const [savedItineraries, setSavedItineraries] = useState([])
   const [savedItems, setSavedItems] = useState([])
@@ -121,23 +123,30 @@ export default function Sidebar({
             <span className="sidebar-logo-text">TRAVELO AI</span>
           </div>
         )}
-        <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            {collapsed ? (
-              <>
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </>
-            ) : (
-              <>
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </>
-            )}
-          </svg>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {!collapsed && (
+            <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+          )}
+          <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {collapsed ? (
+                <>
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </>
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       {!collapsed && (

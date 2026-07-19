@@ -1,8 +1,16 @@
 import React from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function Dashboard({ onSelect }) {
+  const { theme, toggleTheme } = useTheme();
   return (
-    <div className="landing-page" style={{ flex: 1, width: '100%', overflowY: 'auto' }}>
+    <div className="landing-page" style={{ flex: 1, width: '100%', overflowY: 'auto', position: 'relative' }}>
+      {/* Theme Toggle - Top Right */}
+      <div style={{ position: 'absolute', top: '24px', right: '32px', zIndex: 20 }}>
+        <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
+      </div>
       <section className="landing-hero" style={{ paddingTop: '10vh', paddingBottom: '5vh' }}>
         <div className="landing-hero-content" style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
           <div className="badge-pill" style={{ margin: '0 auto 24px auto' }}>✨ Welcome back to Travelo AI</div>

@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function LandingPage({ onGetStarted }) {
+  const { theme, toggleTheme } = useTheme();
   return (
     <div className="landing-page">
       {/* Background Effects */}
@@ -14,6 +16,9 @@ export default function LandingPage({ onGetStarted }) {
           <span className="landing-brand">TRAVELO AI</span>
         </div>
         <div className="landing-nav-links">
+          <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
           <button className="landing-btn-nav" onClick={onGetStarted}>Sign In</button>
           <button className="landing-btn-primary nav-cta" onClick={onGetStarted}>Get Started</button>
         </div>
