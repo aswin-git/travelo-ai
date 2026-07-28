@@ -10,6 +10,7 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import ItineraryWizard from './components/ItineraryWizard'
 import ItineraryView from './components/ItineraryView'
+import TripView from './components/TripView'
 
 const FALLBACK_IMAGES = {
   restaurant: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
@@ -70,6 +71,7 @@ export default function App() {
   const [isEditingItinerary, setIsEditingItinerary] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [fullScreenImage, setFullScreenImage] = useState(null)
+  const [tripViewMode, setTripViewMode] = useState(null) // null | 'map' | 'trip'
 
   const chatEndRef = useRef(null)
 
@@ -1092,6 +1094,7 @@ export default function App() {
                 saveStatus={saveStatus}
                 onDeletePlace={handleDeletePlace}
                 onAddPlace={() => setIsEditModalOpen(true)}
+                onOpenTripView={(mode) => setTripViewMode(mode)}
               />
             ) : (
               <>
@@ -1915,6 +1918,17 @@ export default function App() {
             />
           </div>
         </div>
+      )}
+
+      {/* Trip View overlay (map + live tracking) */}
+      {tripViewMode && itineraryData && (
+        <TripView
+          itineraryData={itineraryData}
+          onClose={() => setTripViewMode(null)}
+          onItineraryUpdate={(updated) => setItineraryData(updated)}
+          accessToken={accessToken}
+          startInTripMode={tripViewMode === 'trip'}
+        />
       )}
     </div>
   )

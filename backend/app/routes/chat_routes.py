@@ -12,10 +12,27 @@ from ..services.graph_orchestrator import run_travel_graph, run_travel_graph_str
 from ..services.review_service import get_and_summarize_reviews, save_summary_to_db
 from ..services.place_service import get_place_by_name
 from ..services.edit_itinerary_service import get_similar_places, insert_places_into_itinerary
+from ..services.route_geometry_service import get_route_geometry
+from ..services.replan_service import replan_remaining_day
 from ..auth.dependencies import get_optional_user
 from ..models.user_model import User
 from ..utils.logger import get_logger
+from pydantic import BaseModel as _BaseModel
+from typing import List as _List, Optional as _Optional
 import json as _json
+
+
+class RouteGeometryRequest(_BaseModel):
+    waypoints: _List[dict]  # List of {"lat": float, "lon": float}
+
+
+class ReplanRequest(_BaseModel):
+    itinerary_data: dict
+    current_day: int
+    current_time: str
+    user_lat: float
+    user_lon: float
+    places_to_remove: _Optional[_List[str]] = None
 
 logger = get_logger(__name__)
 
@@ -106,6 +123,38 @@ async def edit_itinerary_endpoint(request: EditItineraryRequest):
     except Exception as e:
         logger.error(f"Error in edit_itinerary_endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error editing itinerary")
+
+
+@router.post("/itinerary/route-geometry")
+async def route_geometry_endpoint(request: RouteGeometryRequest):
+    """Returns OSRM-decoded polyline coordinates for rendering on a map."""
+    try:
+        geometry = get_route_geometry(request.waypoints)
+        if geometry:
+            return {"coordinates": geometry}
+        return {"coordinates": []}
+    except Exception as e:
+        logger.error(f"Error fetching route geometry: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error fetching route geometry")
+
+
+@router.post("/itinerary/replan")
+async def replan_endpoint(request: ReplanRequest):
+    """Replans the remaining slots for the current day when user is behind schedule."""
+    try:
+        updated = await replan_remaining_day(
+            itinerary=request.itinerary_data,
+            current_day=request.current_day,
+            current_time=request.current_time,
+            user_lat=request.user_lat,
+            user_lon=request.user_lon,
+            places_to_remove=request.places_to_remove,
+        )
+        return updated
+    except Exception as e:
+        logger.error(f"Error replanning itinerary: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error replanning itinerary")
+
 
 # FIX 3: Changed from POST to GET — this is a read-only fetch operation
 @router.get("/place/search", response_model=PlaceResponse)

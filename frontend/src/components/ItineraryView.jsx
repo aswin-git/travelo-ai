@@ -8,7 +8,7 @@ const FALLBACK_IMAGES = {
   default: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=600&q=80"
 };
 
-export default function ItineraryView({ itineraryData, loading, loadingMessage, onBack, onSave, saveStatus, onDeletePlace, onAddPlace }) {
+export default function ItineraryView({ itineraryData, loading, loadingMessage, onBack, onSave, saveStatus, onDeletePlace, onAddPlace, onOpenTripView }) {
   const [activeDay, setActiveDay] = useState(1);
   const [fullScreenImage, setFullScreenImage] = useState(null);
 
@@ -48,6 +48,21 @@ export default function ItineraryView({ itineraryData, loading, loadingMessage, 
               </button>
               <button className="save-itinerary-btn" onClick={onSave} disabled={saveStatus === 'saving'}>
                 {saveStatus === 'saving' ? '⏳ Saving...' : saveStatus === 'saved' ? '✅ Saved!' : saveStatus === 'error' ? '❌ Failed' : '💾 Save Itinerary'}
+              </button>
+            </div>
+            {/* Map action buttons */}
+            <div className="itinerary-map-actions">
+              <button
+                className="map-action-btn view-map"
+                onClick={() => onOpenTripView?.('map')}
+              >
+                🗺️ View Map
+              </button>
+              <button
+                className="map-action-btn start-trip"
+                onClick={() => onOpenTripView?.('trip')}
+              >
+                🚀 Start Trip
               </button>
             </div>
           </div>

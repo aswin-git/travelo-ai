@@ -2603,3 +2603,640 @@ body {
     font-size: 2rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRIP VIEW — Full-screen map overlay (70% map / 30% panel)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.trip-view-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  animation: tripViewSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes tripViewSlideUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.trip-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(24, 26, 32, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.trip-view-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.trip-view-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trip-view-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.trip-view-close-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+}
+
+.trip-view-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trip-mode-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 1px;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.trip-start-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.trip-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.trip-stop-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.trip-stop-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* Behind schedule banner */
+.behind-schedule-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1));
+  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+  animation: messageSlideUp 0.4s ease forwards;
+  flex-shrink: 0;
+}
+
+.behind-schedule-text {
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.behind-schedule-icon {
+  margin-right: 6px;
+}
+
+.behind-schedule-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.replan-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.replan-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.replan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dismiss-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dismiss-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* GPS error banner */
+.geo-error-banner {
+  padding: 8px 20px;
+  background: rgba(239, 68, 68, 0.1);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* Main content split */
+.trip-view-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.trip-view-map {
+  flex: 7;
+  position: relative;
+  min-height: 0;
+}
+
+.trip-view-panel {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 10, 12, 0.5);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+
+.route-loading-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #60a5fa;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+/* Map no-data state */
+.map-no-data {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  background: rgba(9, 10, 12, 0.4);
+}
+
+/* Day tabs in trip panel */
+.trip-day-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 12px 0;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.trip-day-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.trip-day-tab:hover {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.trip-day-tab.active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.trip-day-num {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.trip-day-theme {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Slot list */
+.trip-slot-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trip-slot-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.trip-slot-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.trip-slot-card.active-slot {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+
+.trip-slot-card.highlighted {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.trip-slot-card.visited {
+  opacity: 0.5;
+}
+
+.trip-slot-marker {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trip-slot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.trip-slot-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.trip-slot-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.trip-slot-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.trip-slot-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-slot-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Visit tracking buttons */
+.trip-slot-actions {
+  margin-top: 8px;
+}
+
+.reach-btn,
+.leave-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reach-btn {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.08));
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.reach-btn:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.15));
+  transform: translateY(-1px);
+}
+
+.leave-btn {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #818cf8;
+}
+
+.leave-btn:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(99, 102, 241, 0.15));
+  transform: translateY(-1px);
+}
+
+.trip-slot-visited-info {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #34d399;
+  font-weight: 600;
+}
+
+.trip-slot-at-location {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #60a5fa;
+  font-weight: 600;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Replan modal */
+.replan-modal {
+  max-width: 500px;
+}
+
+.replan-place-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.replan-place-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.replan-place-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.replan-place-item.selected {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.replan-place-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #ef4444;
+}
+
+.replan-place-name {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.replan-place-time {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.replan-confirm-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.replan-cancel-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Map action buttons (View Map / Start Trip) in ItineraryView */
+.itinerary-map-actions {
+  display: flex;
+  gap: 12px;
+  padding: 24px 0;
+  justify-content: center;
+}
+
+.map-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border-radius: 14px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.map-action-btn.view-map {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #818cf8;
+}
+
+.map-action-btn.view-map:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.2);
+}
+
+.map-action-btn.start-trip {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+}
+
+.map-action-btn.start-trip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+}
+
+/* Custom Leaflet marker icon reset */
+.custom-marker-icon {
+  background: none !important;
+  border: none !important;
+}
+
+/* Leaflet container reset for dark background */
+.leaflet-container {
+  background: #1a1d2e;
+}
+
+/* ═══════ Light Theme — Trip View ═══════ */
+[data-theme="light"] .trip-view-header {
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="light"] .trip-view-close-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .trip-view-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 1px solid var(--border-color);
+}
+
+[data-theme="light"] .trip-slot-card {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .trip-slot-card:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .trip-day-tab {
+  border-color: var(--border-color);
+  background: white;
+}
+
+[data-theme="light"] .behind-schedule-banner {
+  background: rgba(245, 158, 11, 0.06);
+  border-bottom-color: rgba(245, 158, 11, 0.15);
+}
+
+[data-theme="light"] .replan-place-item {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .leaflet-container {
+  background: #f0f1f5;
+}
+
+/* ═══════ Responsive — Trip View ═══════ */
+@media (max-width: 768px) {
+  .trip-view-content {
+    flex-direction: column;
+  }
+
+  .trip-view-map {
+    flex: none;
+    height: 50vh;
+  }
+
+  .trip-view-panel {
+    flex: 1;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .trip-view-title {
+    font-size: 1rem;
+  }
+
+  .behind-schedule-banner {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .itinerary-map-actions {
+    flex-direction: column;
+    padding: 16px;
+  }
+}
