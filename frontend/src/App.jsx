@@ -1314,6 +1314,21 @@ export default function App() {
                               {saveStatus === 'saving' ? '⏳ Saving...' : saveStatus === 'saved' ? '✅ Saved!' : saveStatus === 'error' ? '❌ Failed' : '💾 Save Itinerary'}
                             </button>
                           </div>
+                          {/* Map action buttons */}
+                          <div className="itinerary-map-actions" style={{ padding: '16px 0 0 0' }}>
+                            <button
+                              className="map-action-btn view-map"
+                              onClick={() => setTripViewMode('map')}
+                            >
+                              🗺️ View Map
+                            </button>
+                            <button
+                              className="map-action-btn start-trip"
+                              onClick={() => setTripViewMode('trip')}
+                            >
+                              🚀 Start Trip
+                            </button>
+                          </div>
                         </div>
 
                         {isEditingItinerary && (
